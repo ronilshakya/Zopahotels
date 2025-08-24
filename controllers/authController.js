@@ -126,20 +126,18 @@ exports.getUserById = async (req,res) =>{
 
 exports.updateUser = async (req,res) =>{
     try {
-        const {name,phone,address,city,state,zip,country} = req.body;
         const user = await User.findById(req.params.id);
         if(!user){
             return res.status(404).json({message: "User not found"});
         }
-        if(name) user.name = name;
-        if(phone) user.phone = phone;
-        if(address) user.address = address;
-        if(city) user.city = city;
-        if(state) user.state = state;
-        if(zip) user.zip = zip;
-        if(country) user.country = country;
+        const allowedFields = ["name","phone","address","city","state","zip","country"]
+        allowedFields.forEach((key) => {
+            if(req.body[key] !== undefined){
+                user[key] = req.body[key];
+            }
+        });
         await user.save();
-        res.json({message: "User Updated",user});
+        res.json({message: "User Updated"});
     } catch (error) {
         return res.status(500).json({message: error.message});        
     }
