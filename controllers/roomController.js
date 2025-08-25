@@ -71,8 +71,7 @@ exports.updateRoom = async (req,res) =>{
             "rooms",
             "maxOccupancy",
             "images",
-            "amenities",
-            "available"
+            "amenities"
         ];
 
         allowedUpdates.forEach(key => {

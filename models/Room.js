@@ -28,10 +28,6 @@ const RoomSchema = new mongoose.Schema({
             roomNumber:{
                 type:String,
                 required:true
-            },
-            available:{
-                type:Boolean,
-                default: true
             }
         }
     ],
@@ -45,10 +41,6 @@ const RoomSchema = new mongoose.Schema({
     }],
     amenities:[{
         type: String
-    }],
-    available:{
-        type: Boolean,
-        default: true
-    }
+    }]
 },{timestamps:true});
 module.exports = mongoose.model("Room",RoomSchema);
