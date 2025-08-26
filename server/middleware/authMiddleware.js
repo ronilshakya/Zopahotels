@@ -21,4 +21,12 @@ const isAdmin = (req,res,next) =>{
     next();
 }
 
+// const checkWP = (req,res,next) =>{
+//     const key = req.headers['x-wp-key'];
+//     if(key && key === process.env.WP_ADMIN_KEY){
+//         return next();
+//     }
+//     return res.status(403).json({message: "Forbidden: Invalid API Key"});
+// };
+
 module.exports = {auth,isAdmin};

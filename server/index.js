@@ -1,12 +1,19 @@
 const express = require('express');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const cors = require('cors');
+const app = express();
 
 dotenv.config();
 
+app.use(cors({
+    origin: 'http://localhost',
+    methods: ['GET','POST','PUT','DELETE'],
+    credentials: true
+}));
+
 connectDB();
 
-const app = express();
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 

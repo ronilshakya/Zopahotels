@@ -3,10 +3,32 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
+const validator = require('validator')
 
 exports.registerUser = async (req,res) =>{
     try {
-        const {name,email,password,phone,address,city,state,zip,country} = req.body;
+        let {name,email,password,phone,address,city,state,zip,country} = req.body;
+
+        name = name?.trim();
+        email = email?.trim();
+        password = password?.trim();
+        phone = phone?.trim();
+        address = address?.trim();
+        city = city?.trim();
+        state = state?.trim();
+        zip = zip?.trim();
+        country = country?.trim();
+
+        if (!name || !email || !password || !phone || !address || !city || !state || !zip || !country) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (!validator.isEmail(email)) return res.status(400).json({ message: "Invalid email" });
+        if (!validator.isMobilePhone(phone, 'any')) return res.status(400).json({ message: "Invalid phone number" });
+
+        if (!validator.isLength(password, { min: 6 })) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
         const existingUser = await User.findOne({email});
         if(existingUser){
             return res.status(400).json({message:"User already exists"});
@@ -73,7 +95,8 @@ exports.verifyUser = async (req, res) => {
     user.verificationToken = undefined; // remove the token
     await user.save();
     
-    res.send("Email verified successfully! You can now log in.");
+    // res.send("Email verified successfully! You can now log in.");
+    res.redirect('http://localhost/nutopia.com/log-in/');
 }
 
 exports.login = async (req,res) =>{
