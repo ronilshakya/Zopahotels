@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { searchAvailableRooms } from "../../api/bookingApi"; // if you want to fetch room details
 import { getRoomById } from "../../api/roomApi"; // if you want to fetch room details
-const API_URL = "http://api1.hotelnutopia.com";
+const API_URL = "https://api1.hotelnutopia.com";
 import preloader from '../../assets/preloader.gif'
 
 const AvailableRoomsPage = () => {

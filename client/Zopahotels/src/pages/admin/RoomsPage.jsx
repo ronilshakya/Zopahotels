@@ -6,7 +6,7 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import Swal from "sweetalert2";
 import preloader from '../../assets/preloader.gif'
 
-const API_URL = "http://api1.hotelnutopia.com";
+const API_URL = "https://api1.hotelnutopia.com";
 
 const RoomsPage = () => {
   const [allRooms, setAllRooms] = useState([]);

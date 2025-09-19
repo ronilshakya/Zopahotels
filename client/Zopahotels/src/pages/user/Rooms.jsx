@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { getAllRooms } from "../../api/roomApi";
 import preloader from '../../assets/preloader.gif'
 
-const API_URL = "http://api1.hotelnutopia.com";
+const API_URL = "https://api1.hotelnutopia.com";
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);

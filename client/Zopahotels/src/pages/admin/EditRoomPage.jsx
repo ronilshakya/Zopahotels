@@ -4,7 +4,7 @@ import { getRoomById, updateRoom } from "../../api/roomApi";
 import { FiX } from "react-icons/fi";
 import Swal from "sweetalert2";
 
-const API_URL = "http://api1.hotelnutopia.com";
+const API_URL = "https://api1.hotelnutopia.com";
 
 const EditRoomPage = () => {
   const { id } = useParams();
