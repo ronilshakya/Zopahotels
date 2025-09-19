@@ -7,13 +7,14 @@ const app = express();
 dotenv.config();
 
 app.use(cors({
-    origin: 'http://localhost',
+    origin: 'http://localhost:5173',
     methods: ['GET','POST','PUT','DELETE'],
     credentials: true
 }));
 
 connectDB();
 
+app.use('/uploads', express.static('uploads'));
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }));
 

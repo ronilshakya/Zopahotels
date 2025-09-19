@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Booking = require('../models/Booking');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -103,6 +104,10 @@ exports.login = async (req,res) =>{
     try {
         const {email,password} = req.body;
         const user = await User.findOne({email});
+        if (user.status === "inactive") {
+            return res.status(403).json({ message: "Your account is suspended. Contact support." });
+        }
+
         if(!user){
             return res.status(400).json({message: "User not found"});
         }
@@ -126,14 +131,34 @@ exports.login = async (req,res) =>{
     }
 }
 
-exports.getAllUsers = async (req,res) =>{
-    try {
-        const users = await User.find().select("-password");
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({message: error.message});
-    }
-}
+
+exports.getUsers = async (req, res) => {
+  try {
+    const { role } = req.query; // ?role=admin OR ?role=user
+
+    let filter = {};
+    if (role) filter.role = role;
+
+    // Find users
+    const users = await User.find(filter).select("-password");
+
+    // Get booking counts per user
+    const usersWithBookings = await Promise.all(
+      users.map(async (user) => {
+        const bookingCount = await Booking.countDocuments({ user: user._id });
+        return {
+          ...user.toObject(),
+          bookingCount,
+        };
+      })
+    );
+
+    res.json(usersWithBookings);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 
 exports.getUserById = async (req,res) =>{
     try {
