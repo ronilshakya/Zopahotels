@@ -1,8 +1,7 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
-const API_URL = 'https://api1.hotelnutopia.com/api/users'
+import { API_URL } from "../../config";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
@@ -13,7 +12,7 @@ const AdminLogin = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post(`${API_URL}/login`, {
+      const res = await axios.post(`${API_URL}api/users/login`, {
         email,
         password,
       });

@@ -1,8 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { logout } from '../api/authApi';
 import { useNavigate, useLocation } from 'react-router-dom';
+import {useHotel} from '../context/HotelContext'
+import {API_URL} from '../config'
 
 const Navbar = () => {
+  const {hotel,loading} = useHotel();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
@@ -36,9 +39,13 @@ const Navbar = () => {
           
           {/* Logo */}
           <div className="flex-shrink-0">
+            {hotel?(
+              <img src={`${API_URL}uploads/${hotel.logo}`} className='w-32' alt="" />
+            ):(
             <a href="/" className="text-2xl font-extrabold text-blue-600">
               Hotel<span className="text-indigo-500">Booking</span>
             </a>
+            )}
           </div>
 
           {/* Desktop Links */}

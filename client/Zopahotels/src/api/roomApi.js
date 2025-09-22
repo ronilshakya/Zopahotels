@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://api1.hotelnutopia.com/api/rooms";
+const API_URL = "http://localhost:3000/api/rooms";
 
 export const getRoomById = async (id)=>{
     try {

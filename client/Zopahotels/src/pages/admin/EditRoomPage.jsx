@@ -3,8 +3,7 @@ import { useParams } from "react-router-dom";
 import { getRoomById, updateRoom } from "../../api/roomApi";
 import { FiX } from "react-icons/fi";
 import Swal from "sweetalert2";
-
-const API_URL = "https://api1.hotelnutopia.com";
+import { API_URL } from "../../config";
 
 const EditRoomPage = () => {
   const { id } = useParams();
@@ -208,7 +207,7 @@ const EditRoomPage = () => {
               {existingImages.map((img, idx) => (
                 <div key={idx} className="relative">
                   <img
-                    src={`${API_URL}/uploads/${img}`}
+                    src={`${API_URL}uploads/${img}`}
                     alt={`Room ${idx}`}
                     className="w-24 h-24 object-cover rounded-md shadow-sm"
                   />

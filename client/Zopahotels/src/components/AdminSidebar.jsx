@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import { adminLogout } from "../api/authApi";
+import { useHotel } from "../context/HotelContext";
+import { API_URL } from "../config";
 
 const AdminSidebar = () => {
+  const {hotel,loading} = useHotel();
   const [isOpen, setIsOpen] = useState(false);
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -14,6 +17,7 @@ const AdminSidebar = () => {
     { to: "/admin/all-admins", label: "Users" },
     { to: "/admin/booking-calender", label: "Calender" },
     { to: "/admin/reports", label: "Reports" },
+    { to: "/admin/settings", label: "Settings" },
   ];
 
   return (
@@ -61,7 +65,11 @@ const AdminSidebar = () => {
         } md:translate-x-0 md:w-64 z-40`}
       >
         <div className="p-4 border-b border-gray-700">
-          <h1 className="text-xl font-bold">Admin Dashboard</h1>
+          {hotel?(
+            <img src={`${API_URL}uploads/${hotel.logo}`} className="w-50" alt="logo" />
+          ):(
+            <h1 className="text-xl font-bold">Admin Dashboard</h1>  
+          )}
         </div>
         <nav className="flex-1 p-4">
           <ul className="space-y-2">

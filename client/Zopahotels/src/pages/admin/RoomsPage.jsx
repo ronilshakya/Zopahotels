@@ -5,8 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import Swal from "sweetalert2";
 import preloader from '../../assets/preloader.gif'
-
-const API_URL = "https://api1.hotelnutopia.com";
+import { API_URL } from "../../config";
 
 const RoomsPage = () => {
   const [allRooms, setAllRooms] = useState([]);
@@ -97,7 +96,7 @@ const handleDeleteRoom = async (id) => {
               className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300"
             >
               <img
-                src={`${API_URL}/uploads/${room?.images[0]}`}
+                src={`${API_URL}uploads/${room?.images[0]}`}
                 alt="Room"
                 className="w-full h-48 object-cover"
               />

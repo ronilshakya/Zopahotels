@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../../api/authApi";
+import { useHotel } from "../../context/HotelContext";
+import { API_URL } from "../../config";
 
 const Signup = () => {
+  const {hotel} = useHotel();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
@@ -43,11 +46,15 @@ const Signup = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-white to-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-r from-blue-200 via-blue-100 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8">
-        <h2 className="text-3xl font-bold text-gray-800 text-center mb-6">
-          Create Account
-        </h2>
+        {hotel?(
+                  <img src={`${API_URL}uploads/${hotel.logo}`} alt="logo" className="w-50 mx-auto" />
+                ):(
+                <h2 className="text-3xl font-bold text-gray-800 text-center mb-6">
+                  Welcome Back
+                </h2>
+                )}
 
         {error && (
           <p className="text-red-500 text-center mb-4">{error}</p>

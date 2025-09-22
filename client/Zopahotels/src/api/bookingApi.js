@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://api1.hotelnutopia.com/api/booking";
+const API_URL = "http://localhost:3000/api/booking";
 
 export const searchAvailableRooms = async ({ checkIn, checkOut, adults, children }) => {
   try {

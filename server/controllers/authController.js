@@ -9,7 +9,6 @@ const validator = require('validator')
 exports.registerUser = async (req,res) =>{
     try {
         let {name,email,password,phone,address,city,state,zip,country} = req.body;
-
         name = name?.trim();
         email = email?.trim();
         password = password?.trim();
@@ -49,6 +48,7 @@ exports.registerUser = async (req,res) =>{
             state,
             zip,
             country,
+            role,
             isVerified: false,
             verificationToken
         });
@@ -63,7 +63,7 @@ exports.registerUser = async (req,res) =>{
             }
         })
 
-        const verificationUrl = `http://localhost:${process.env.PORT}/api/users/verify/${verificationToken}`;
+        const verificationUrl = `${process.env.PROD_CLIENT_URL}/api/users/verify/${verificationToken}`;
 
         const mailOptions = {
             from: '"Hotel Booking" <no-reply@hotelnutopia.com>', 
@@ -97,7 +97,7 @@ exports.verifyUser = async (req, res) => {
     await user.save();
     
     // res.send("Email verified successfully! You can now log in.");
-    res.redirect('http://localhost/nutopia.com/log-in/');
+    res.redirect('https://booking.hotelnutopia.com/login');
 }
 
 exports.login = async (req,res) =>{
@@ -202,3 +202,63 @@ exports.deleteUser = async (req,res) =>{
         return res.status(500).json({message: error.message});        
     }
 }
+
+exports.registerAdmin = async (req, res) => {
+    try {
+        let { name, email, password, phone, address, city, state, zip, country } = req.body;
+
+        name = name?.trim();
+        email = email?.trim();
+        password = password?.trim();
+        phone = phone?.trim();
+        address = address?.trim();
+        city = city?.trim();
+        state = state?.trim();
+        zip = zip?.trim();
+        country = country?.trim();
+
+        if (!name || !email || !password || !phone || !address || !city || !state || !zip || !country) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
+        if (!validator.isEmail(email)) return res.status(400).json({ message: "Invalid email" });
+        if (!validator.isMobilePhone(phone, 'any')) return res.status(400).json({ message: "Invalid phone number" });
+
+        if (!validator.isLength(password, { min: 6 })) {
+            return res.status(400).json({ message: "Password must be at least 6 characters" });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ message: "User already exists" });
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create the admin user directly, skip verification
+        const user = await User.create({
+            name,
+            email,
+            password: hashedPassword,
+            phone,
+            address,
+            city,
+            state,
+            zip,
+            country,
+            role: "admin",
+            isVerified: true,        // marked as verified immediately
+            verificationToken: null  // no token needed
+        });
+
+        res.status(201).json({ message: "Admin registered successfully", user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }});
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};

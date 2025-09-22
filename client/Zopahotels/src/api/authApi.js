@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "https://api1.hotelnutopia.com/api/users";
+const API_URL = "http://localhost:3000/api/users";
 
 export const signup = async (payload) =>{
   try {

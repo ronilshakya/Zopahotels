@@ -2,8 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getAllRooms } from "../../api/roomApi";
 import preloader from '../../assets/preloader.gif'
-
-const API_URL = "https://api1.hotelnutopia.com";
+import {API_URL} from '../../config'
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
@@ -59,7 +58,7 @@ const Rooms = () => {
               onClick={() => navigate(`/room/${room._id}`)}
               src={
                 room.images && room.images.length > 0
-                  ? `${API_URL}/uploads/${room.images[0]}`
+                  ? `${API_URL}uploads/${room.images[0]}`
                   : "https://via.placeholder.com/400x250"
               }
               alt={room.type}

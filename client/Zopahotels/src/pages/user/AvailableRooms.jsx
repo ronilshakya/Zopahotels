@@ -2,8 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { searchAvailableRooms } from "../../api/bookingApi"; // if you want to fetch room details
 import { getRoomById } from "../../api/roomApi"; // if you want to fetch room details
-const API_URL = "https://api1.hotelnutopia.com";
 import preloader from '../../assets/preloader.gif'
+import { API_URL } from "../../config";
 
 const AvailableRoomsPage = () => {
   const [searchParams] = useSearchParams();
@@ -85,7 +85,7 @@ const AvailableRoomsPage = () => {
                 <img
                   src={
                     room.image
-                      ? `${API_URL}/uploads/${room.image}`
+                      ? `${API_URL}uploads/${room.image}`
                       : "/images/room-placeholder.jpg" // placeholder
                   }
                   alt={room.type}
