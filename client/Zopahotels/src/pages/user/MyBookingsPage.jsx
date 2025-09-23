@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import { getMyBookings } from "../../api/bookingApi";
 import { useNavigate } from "react-router-dom";
 import preloader from '../../assets/preloader.gif'
+import { useHotel } from "../../context/HotelContext";
 
 const MyBookingsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const {hotel} = useHotel();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,7 +89,7 @@ const MyBookingsPage = () => {
           <p><strong>Nights:</strong> {nights}</p>
           <p><strong>Adults:</strong> {booking.adults}</p>
           <p><strong>Children:</strong> {booking.children}</p>
-          <p><strong>Total Price:</strong> ${booking.totalPrice}</p>
+          <p><strong>Total Price:</strong> {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {booking.totalPrice}</p>
         </div>
 
         <div className="mt-2 text-gray-700">

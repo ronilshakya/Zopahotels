@@ -30,6 +30,7 @@ import EditProfile from './pages/user/EditProfile';
 import Settings from './pages/admin/Settings';
 import HotelForm from './pages/admin/HotelForm';
 import FaviconUpdater from './FaviconUpdater';
+import AddAdmin from './pages/admin/AddAdmin';
 
 // Wrapper to get `mode` from URL and pass as prop
 const HotelFormWrapper = () => {
@@ -81,6 +82,7 @@ export default function App() {
           <Route path="booking-calender" element={<BookingCalendar />} />
           <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="add-admin" element={<AddAdmin />} />
 
           {/* Hotel form routes */}
           <Route path="hotel-form/:mode" element={<HotelFormWrapper />} />

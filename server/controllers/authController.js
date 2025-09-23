@@ -38,6 +38,10 @@ exports.registerUser = async (req,res) =>{
 
         const verificationToken = crypto.randomBytes(32).toString("hex");
 
+        const hasUsers = await User.exists({});
+        const role = hasUsers ? "user" : "admin"; // first user = admin
+
+
         const user = await User.create({
             name,
             email,
@@ -48,25 +52,25 @@ exports.registerUser = async (req,res) =>{
             state,
             zip,
             country,
-            role,
             isVerified: false,
-            verificationToken
+            verificationToken,
+            role
         });
 
         const transporter = nodemailer.createTransport({
-            host:"mail.hotelnutopia.com",
-            port:465,
+            host: process.env.MAIL_HOST,
+            port: Number(process.env.MAIL_PORT),
             secure: true,
             auth:{
-                user:"no-reply@hotelnutopia.com",
-                pass:"0X9V&{Y{Rm!4N~@F"
+                user: process.env.MAIL_USER,
+                pass: process.env.MAIL_PASS
             }
         })
 
-        const verificationUrl = `${process.env.PROD_CLIENT_URL}/api/users/verify/${verificationToken}`;
+        const verificationUrl = `${process.env.PROD_SERVER_URL}/api/users/verify/${verificationToken}`;
 
         const mailOptions = {
-            from: '"Hotel Booking" <no-reply@hotelnutopia.com>', 
+            from: `"Hotel Booking" <${process.env.MAIL_USER}>`, 
             to: user.email,                                     
             subject: "Verify Your Email",
             html: `
@@ -97,7 +101,7 @@ exports.verifyUser = async (req, res) => {
     await user.save();
     
     // res.send("Email verified successfully! You can now log in.");
-    res.redirect('https://booking.hotelnutopia.com/login');
+    res.redirect(`${process.env.REDIRECTION_AFTER_VALIDATE}`);
 }
 
 exports.login = async (req,res) =>{

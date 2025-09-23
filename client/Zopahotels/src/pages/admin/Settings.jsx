@@ -83,6 +83,10 @@ const Settings = () => {
               <p className="text-gray-700">{hotel.description}</p>
             </div>
           )}
+            <div className="mt-4">
+              <h3 className="font-semibold">Currency</h3>
+              <p className="text-gray-700">{hotel.currency}</p>
+            </div>
 
           <div className="flex space-x-4 mt-6">
             <Button onClick={() => navigate('/admin/hotel-form/edit')}>Edit</Button>

@@ -2,6 +2,7 @@ import React, { useRef, useState } from "react";
 import { getReport } from "../../api/bookingApi";
 import Button from "../../components/Button";
 import Swal from "sweetalert2";
+import { useHotel } from "../../context/HotelContext";
 
 const ReportsPage = () => {
   const [fromDate, setFromDate] = useState("");
@@ -9,6 +10,7 @@ const ReportsPage = () => {
   const [bookings, setBookings] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(false);
+  const {hotel} = useHotel();
   const token = localStorage.getItem("adminToken");
 
   const tableRef = useRef();
@@ -116,7 +118,7 @@ const ReportsPage = () => {
             </div>
             <div className="bg-yellow-100 p-4 rounded-lg text-center col-span-2 md:col-span-1">
               <p className="text-gray-600 text-sm">Revenue</p>
-              <p className="text-xl font-bold">${summary.revenue}</p>
+              <p className="text-xl font-bold">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {summary.revenue}</p>
             </div>
           </div>
         )}
@@ -152,7 +154,7 @@ const ReportsPage = () => {
                       <td className="px-4 py-2 text-sm">{new Date(b.checkOut).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-sm">{nights}</td>
                       <td className="px-4 py-2 text-sm">{b.adults + b.children}</td>
-                      <td className="px-4 py-2 text-sm">${b.totalPrice}</td>
+                      <td className="px-4 py-2 text-sm">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {b.totalPrice}</td>
                       <td className="px-4 py-2 text-sm capitalize">{b.status}</td>
                     </tr>
                   );

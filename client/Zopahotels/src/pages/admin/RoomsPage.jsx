@@ -6,10 +6,12 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import Swal from "sweetalert2";
 import preloader from '../../assets/preloader.gif'
 import { API_URL } from "../../config";
+import { useHotel } from "../../context/HotelContext";
 
 const RoomsPage = () => {
   const [allRooms, setAllRooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const {hotel} = useHotel();
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
 
@@ -103,7 +105,7 @@ const handleDeleteRoom = async (id) => {
               <div className="p-4">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{room.type}</h3>
                 <p className="text-gray-600 mb-2">{room.description}</p>
-                <p className="text-gray-800 font-bold mb-2">${room.price} / night</p>
+                <p className="text-gray-800 font-bold mb-2">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {room.price} / night</p>
                 <div className="flex flex-wrap gap-2 mb-4">
                   {room.rooms.map((r) => (
                     <span

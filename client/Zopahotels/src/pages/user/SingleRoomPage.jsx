@@ -9,6 +9,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Swal from "sweetalert2";
 import preloader from '../../assets/preloader.gif'
+import {useHotel} from '../../context/HotelContext'
 
 const API_URL = "http://api1.hotelnutopia.com";
 
@@ -17,6 +18,7 @@ const SingleRoomPage = () => {
   const { state } = useLocation();
   const navigate = useNavigate();
   const [room, setRoom] = useState(null);
+  const {hotel} = useHotel();
 
   const checkIn = state?.checkIn;
   const checkOut = state?.checkOut;
@@ -128,7 +130,7 @@ const SingleRoomPage = () => {
             <div className="bg-blue-50 p-4 rounded-lg shadow-sm">
               <p className="text-gray-700 text-sm">Price per Night</p>
               <p className="text-xl font-semibold text-blue-600">
-                ${room.price}
+                {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {room.price}
               </p>
             </div>
             <div className="bg-green-50 p-4 rounded-lg shadow-sm">

@@ -8,7 +8,7 @@ exports.createHotel = async (req, res) => {
             return res.status(400).json({ message: "Only one hotel can be created" });
         }
 
-        const { name, description, address, phone, email } = req.body;
+        const { name, description, address, phone, email,currency } = req.body;
 
         // If logo is uploaded via multer
         let logo = null;
@@ -23,7 +23,8 @@ exports.createHotel = async (req, res) => {
             address,
             phone,
             email,
-            logo
+            logo,
+            currency
         });
 
         res.status(201).json({ message: "Hotel created successfully", hotel });
@@ -55,7 +56,7 @@ exports.updateHotel = async (req, res) => {
             return res.status(404).json({ message: "Hotel not found" });
         }
 
-        const allowedFields = ['name', 'description', 'address', 'phone', 'email'];
+        const allowedFields = ['name', 'description', 'address', 'phone', 'email', 'currency'];
         allowedFields.forEach(field => {
             if (req.body[field] !== undefined) {
                 hotel[field] = req.body[field];

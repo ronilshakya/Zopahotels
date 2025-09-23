@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Swal from 'sweetalert2';
 import preloader from '../../assets/preloader.gif'
-
+import { useHotel } from '../../context/HotelContext';
 const AllBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const {hotel} = useHotel();
   const token = localStorage.getItem('adminToken');
   const navigate = useNavigate();
 
@@ -134,7 +135,7 @@ const AllBookings = () => {
                   </td>
                   <td className="px-4 py-3 text-gray-600 text-sm">{booking.adults}</td>
                   <td className="px-4 py-3 text-gray-600 text-sm">{booking.children}</td>
-                  <td className="px-4 py-3 text-gray-600 text-sm">${booking.totalPrice}</td>
+                  <td className="px-4 py-3 text-gray-600 text-sm">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {booking.totalPrice}</td>
                   <td className="px-4 py-3 text-gray-600 text-sm">{booking.status}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">

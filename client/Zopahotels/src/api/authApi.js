@@ -1,10 +1,11 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:3000/api/users";
+const API_URL_EXTENDED = `${API_URL}api/users`;
 
 export const signup = async (payload) =>{
   try {
-    const res = await axios.post(`${API_URL}/register`,payload);
+    const res = await axios.post(`${API_URL_EXTENDED}/register`,payload);
     return res.data;
   } catch (error) {
     console.log("Signup error" + error.message);
@@ -15,7 +16,7 @@ export const signup = async (payload) =>{
 export const login = async ({ email, password }) => {
   try {
     const res = await axios.post(
-      `${API_URL}/login`,
+      `${API_URL_EXTENDED}/login`,
       { email, password },
       { headers: { "Content-Type": "application/json" } }
     );
@@ -40,7 +41,7 @@ export const adminLogout = () =>{
 
 export const getAllUsers = async (token) =>{
   try {
-    const res = await axios.get(`${API_URL}?role=user`,{
+    const res = await axios.get(`${API_URL_EXTENDED}?role=user`,{
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}` 
@@ -54,7 +55,7 @@ export const getAllUsers = async (token) =>{
 }
 export const getAllAdmins = async (token) =>{
   try {
-    const res = await axios.get(`${API_URL}?role=admin`,{
+    const res = await axios.get(`${API_URL_EXTENDED}?role=admin`,{
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}` 
@@ -69,7 +70,7 @@ export const getAllAdmins = async (token) =>{
 
 export const updateUser = async (id,payload,token) =>{
   try {
-    const res = await axios.put(`${API_URL}/${id}`,payload,{
+    const res = await axios.put(`${API_URL_EXTENDED}/${id}`,payload,{
       headers:{
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
@@ -84,7 +85,7 @@ export const updateUser = async (id,payload,token) =>{
 
 export const deleteUser = async ({id,token}) =>{
   try {
-    const res = await axios.delete(`${API_URL}/${id}`,{
+    const res = await axios.delete(`${API_URL_EXTENDED}/${id}`,{
       headers:{
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
@@ -99,7 +100,7 @@ export const deleteUser = async ({id,token}) =>{
 
 export const getUserById = async (id,token) =>{
   try {
-    const res = await axios.get(`${API_URL}/${id}`,{
+    const res = await axios.get(`${API_URL_EXTENDED}/${id}`,{
       headers:{
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}`
@@ -108,6 +109,20 @@ export const getUserById = async (id,token) =>{
     return res.data;
   } catch (error) {
     console.log(error.message);
+    throw error;
+  }
+}
+
+export const registerAdmin = async (payload,token) =>{
+  try {
+    const res = await axios.post(`${API_URL_EXTENDED}/register-admin`,payload,
+      {headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}` 
+      }});
+    return res.data;
+  } catch (error) {
+    console.log("Signup error" + error.message);
     throw error;
   }
 }

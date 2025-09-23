@@ -2,12 +2,14 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { API_URL } from "../../config";
+import { useHotel } from "../../context/HotelContext";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const {hotel} = useHotel();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -39,6 +41,10 @@ const AdminLogin = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+        {
+          hotel &&
+          (<img src={`${API_URL}uploads/${hotel.logo}`} alt="logo" className="w-50 mx-auto"/>)
+        }
         <h2 className="text-2xl font-bold text-gray-800 text-center mb-6">Admin Login</h2>
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

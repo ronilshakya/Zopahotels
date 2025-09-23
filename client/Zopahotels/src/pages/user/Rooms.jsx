@@ -3,11 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { getAllRooms } from "../../api/roomApi";
 import preloader from '../../assets/preloader.gif'
 import {API_URL} from '../../config'
+import { useHotel } from "../../context/HotelContext";
 
 const Rooms = () => {
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const {hotel} = useHotel();
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -67,7 +69,9 @@ const Rooms = () => {
             <div className="p-4">
               <h2 className="text-xl font-semibold text-gray-800">{room.type}</h2>
               <p className="text-gray-600 mb-2">Room Number: {room.rooms?.[0]?.roomNumber || "N/A"}</p>
-              <p className="text-gray-700 font-medium mb-4">${room.price || room.pricePerNight} / night</p>
+              <p className="text-gray-700 font-medium mb-4">
+                {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {room.price ?? room.pricePerNight} / night
+                </p>
               <button
                 onClick={() => navigate(`/room/${room._id}`)}
                 className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200"

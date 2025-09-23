@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const axios = require('axios');
 
 const auth = (req,res,next) =>{
     try{
@@ -21,12 +22,34 @@ const isAdmin = (req,res,next) =>{
     next();
 }
 
-// const checkWP = (req,res,next) =>{
-//     const key = req.headers['x-wp-key'];
-//     if(key && key === process.env.WP_ADMIN_KEY){
-//         return next();
-//     }
-//     return res.status(403).json({message: "Forbidden: Invalid API Key"});
-// };
+const verifyTurnstile = async (req, res, next) => {
+  try {
+    const token = req.body.turnstileToken; // sent from frontend
+    if (!token) {
+      return res.status(400).json({ message: "CAPTCHA token is missing" });
+    }
 
-module.exports = {auth,isAdmin};
+    const secretKey = process.env.TURNSTILE_SECRET; // your server-side secret
+
+    const response = await axios.post(
+      'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+      new URLSearchParams({
+        secret: secretKey,
+        response: token,
+        remoteip: req.ip,
+      }).toString(),
+      { headers: { 'Content-Type': 'application/x-www-form-urlencoded' } }
+    );
+
+    if (response.data.success) {
+      next(); // CAPTCHA passed, continue to the route
+    } else {
+      return res.status(403).json({ message: "CAPTCHA verification failed" });
+    }
+  } catch (err) {
+    console.error("Turnstile verification error:", err);
+    return res.status(500).json({ message: "Server error verifying CAPTCHA" });
+  }
+};
+
+module.exports = {auth,isAdmin,verifyTurnstile};

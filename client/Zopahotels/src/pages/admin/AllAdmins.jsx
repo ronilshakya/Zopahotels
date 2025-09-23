@@ -3,7 +3,7 @@ import { deleteUser, getAllAdmins } from '../../api/authApi';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import preloader from '../../assets/preloader.gif'
-
+import Button from '../../components/Button'
 const AllAdmins = () => {
   const [allAdmins, setAllAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,6 +13,8 @@ const AllAdmins = () => {
   const handleEditUser = (id) => {
     navigate(`/admin/edit-user/${id}`);
   };
+
+  const handleAddAdmin= () => navigate("/admin/add-admin");
 
     const handleDeleteUser = async (id) => {
       // Confirmation first
@@ -87,7 +89,10 @@ const AllAdmins = () => {
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">All Admins</h2>
+        <div className="flex justify-between items-baseline">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">All Admins</h2>
+          <Button onClick={handleAddAdmin}>Add Admin</Button>
+        </div>
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>

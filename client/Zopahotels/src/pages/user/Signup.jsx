@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { signup } from "../../api/authApi";
 import { useHotel } from "../../context/HotelContext";
 import { API_URL } from "../../config";
+import preloaderGif from '../../assets/preloader.gif'
+import Swal from "sweetalert2";
 
 const Signup = () => {
   const {hotel} = useHotel();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -37,11 +40,14 @@ const Signup = () => {
     }
 
     try {
+      setLoading(true); // start preloader
       await signup(formData);
-      alert("Signup successful! Please check your email for verification.");
+      Swal.fire('Signup successful!','Please check your email for verification.','success');
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Signup failed");
+    } finally {
+      setLoading(false); // stop preloader
     }
   };
 
@@ -186,7 +192,7 @@ const Signup = () => {
             type="submit"
             className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-200 mt-4 font-semibold"
           >
-            Sign Up
+            {loading ? (<img src={preloaderGif} className="w-12 mx-auto" alt="preloader"/>) : "Sign Up"}
           </button>
         </form>
 

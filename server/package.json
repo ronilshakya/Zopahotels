@@ -23,6 +23,7 @@
   },
   "homepage": "https://github.com/ronilshakya/Zopahotels#readme",
   "dependencies": {
+    "axios": "^1.12.2",
     "bcryptjs": "^3.0.2",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
