@@ -1,4 +1,7 @@
-Env Keys
+Changes for prod
+1) backend index.js allowed origins for CORS
+
+Input Env Keys:
 
 Client: 
 VITE_TURNSTILE_SITE_KEY
