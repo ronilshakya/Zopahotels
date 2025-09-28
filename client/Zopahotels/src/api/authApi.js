@@ -13,11 +13,11 @@ export const signup = async (payload) =>{
   }
 }
 
-export const login = async ({ email, password }) => {
+export const login = async ({ email, password, turnstileToken }) => {
   try {
     const res = await axios.post(
       `${API_URL_EXTENDED}/login`,
-      { email, password },
+      { email, password,turnstileToken },
       { headers: { "Content-Type": "application/json" } }
     );
 

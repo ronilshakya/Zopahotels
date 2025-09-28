@@ -1,10 +1,11 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:3000/api/rooms";
+const API_URL_EXTENDED = `${API_URL}api/rooms`;
 
 export const getRoomById = async (id)=>{
     try {
-        const res = await axios.get(`${API_URL}/${id}`);
+        const res = await axios.get(`${API_URL_EXTENDED}/${id}`);
         console.log(res.data);
         return res.data;
     } catch (error) {
@@ -15,7 +16,7 @@ export const getRoomById = async (id)=>{
 
 export const getAllRooms = async () =>{
     try {
-        const res = await axios.get(`${API_URL}`,{
+        const res = await axios.get(`${API_URL_EXTENDED}`,{
            headers: {
              "Content-Type": "application/json",
            }
@@ -28,7 +29,7 @@ export const getAllRooms = async () =>{
 }
 export const createRoom = async (payload, token) =>{
     try {
-        const res = await axios.post(API_URL, payload, {
+        const res = await axios.post(API_URL_EXTENDED, payload, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -48,7 +49,7 @@ export const updateRoom = async (id, payload, token) => {
         "Content-Type": "multipart/form-data", 
       },
     };
-    const res = await axios.put(`${API_URL}/${id}`, payload, config);
+    const res = await axios.put(`${API_URL_EXTENDED}/${id}`, payload, config);
     return res.data;
   } catch (error) {
     console.log(error.message);
@@ -59,7 +60,7 @@ export const updateRoom = async (id, payload, token) => {
 
 export const deleteRoom = async (id, token) => {
   try {
-    const res = await axios.delete(`${API_URL}/${id}`, {
+    const res = await axios.delete(`${API_URL_EXTENDED}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

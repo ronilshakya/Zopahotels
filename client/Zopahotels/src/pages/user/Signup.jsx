@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { signup } from "../../api/authApi";
 import { useHotel } from "../../context/HotelContext";
@@ -7,21 +7,30 @@ import preloaderGif from '../../assets/preloader.gif'
 import Swal from "sweetalert2";
 
 const Signup = () => {
-  const {hotel} = useHotel();
+  const { hotel } = useHotel();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-    country: "",
+    name: "", email: "", password: "", phone: "", address: "",
+    city: "", state: "", zip: "", country: "",
   });
   const [error, setError] = useState("");
+  const [captchaToken, setCaptchaToken] = useState("");
+  const widgetRef = useRef(null);
+
+  // ✅ Load Turnstile once
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (window.turnstile && !widgetRef.current) {
+        widgetRef.current = window.turnstile.render("#turnstile-widget", {
+          sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+          callback: (token) => setCaptchaToken(token),
+        });
+        clearInterval(interval);
+      }
+    }, 100);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (e) => {
     const { id, value } = e.target;
@@ -39,15 +48,24 @@ const Signup = () => {
       }
     }
 
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA");
+      return;
+    }
+
     try {
-      setLoading(true); // start preloader
-      await signup(formData);
-      Swal.fire('Signup successful!','Please check your email for verification.','success');
+      setLoading(true);
+      await signup({ ...formData, turnstileToken: captchaToken }); // ✅ send token
+      Swal.fire("Signup successful!", "Please check your email for verification.", "success");
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.message || "Signup failed");
+      setCaptchaToken(""); // reset token
+      if (window.turnstile && widgetRef.current) {
+        window.turnstile.reset(widgetRef.current); // reset widget for retry
+      }
     } finally {
-      setLoading(false); // stop preloader
+      setLoading(false);
     }
   };
 
@@ -187,6 +205,7 @@ const Signup = () => {
             </div>
           </div>
 
+           <div id="turnstile-widget" className="my-4"></div>
 
           <button
             type="submit"

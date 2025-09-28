@@ -1,10 +1,11 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:3000/api/hotel";
+const API_URL_EXTENDED = `${API_URL}api/hotel`;
 
 export const createHotel = async (payload,token) =>{
     try {
-        const res = await axios.post(`${API_URL}/`, payload, {
+        const res = await axios.post(`${API_URL_EXTENDED}/`, payload, {
            headers: {
              "Content-Type": "multipart/form-data",
              Authorization: `Bearer ${token}` 
@@ -19,7 +20,7 @@ export const createHotel = async (payload,token) =>{
       
       export const getHotel = async () =>{
         try {
-          const res = await axios.get(`${API_URL}/`, {
+          const res = await axios.get(`${API_URL_EXTENDED}/`, {
             headers: {
               "Content-Type": "application/json"
             }
@@ -33,7 +34,7 @@ export const createHotel = async (payload,token) =>{
       
       export const updateHotel = async (payload,token) =>{
         try {
-          const res = await axios.put(`${API_URL}/`,payload, {
+          const res = await axios.put(`${API_URL_EXTENDED}/`,payload, {
             headers: {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${token}` 
@@ -48,7 +49,7 @@ export const createHotel = async (payload,token) =>{
       
       export const deleteHotel = async (token) =>{
         try {
-          const res = await axios.delete(`${API_URL}/`, {
+          const res = await axios.delete(`${API_URL_EXTENDED}/`, {
             headers: {
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}` 

@@ -1,10 +1,11 @@
 import axios from "axios";
+import { API_URL } from "../config";
 
-const API_URL = "http://localhost:3000/api/booking";
+const API_URL_EXTENDED = `${API_URL}api/booking`;
 
 export const searchAvailableRooms = async ({ checkIn, checkOut, adults, children }) => {
   try {
-    const res = await axios.get(`${API_URL}/available`, {
+    const res = await axios.get(`${API_URL_EXTENDED}/available`, {
       params: { checkIn, checkOut, adults, children },
     });
 
@@ -17,7 +18,7 @@ export const searchAvailableRooms = async ({ checkIn, checkOut, adults, children
 
 export const createBooking = async ({payload,token}) =>{
     try {
-        const res = await axios.post(`${API_URL}/`, payload, {
+        const res = await axios.post(`${API_URL_EXTENDED}/`, payload, {
            headers: {
              "Content-Type": "application/json",
              Authorization: `Bearer ${token}` 
@@ -32,7 +33,7 @@ export const createBooking = async ({payload,token}) =>{
 
 export const getAllBookings = async (token) =>{
   try {
-      const res = await axios.get(`${API_URL}/`, {
+      const res = await axios.get(`${API_URL_EXTENDED}/`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}` 
@@ -47,7 +48,7 @@ export const getAllBookings = async (token) =>{
     
 export const getMyBookings = async (token) =>{
   try {
-    const res = await axios.get(`${API_URL}/me`, {
+    const res = await axios.get(`${API_URL_EXTENDED}/me`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -60,7 +61,7 @@ export const getMyBookings = async (token) =>{
 }
 export const updateBooking = async ({token,payload,id}) =>{
   try {
-    const res = await axios.put(`${API_URL}/${id}`,payload, {
+    const res = await axios.put(`${API_URL_EXTENDED}/${id}`,payload, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -73,7 +74,7 @@ export const updateBooking = async ({token,payload,id}) =>{
 }
 export const getBookingById = async (id, token) => {
   try {
-    const res = await axios.get(`${API_URL}/${id}`, {
+    const res = await axios.get(`${API_URL_EXTENDED}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -86,7 +87,7 @@ export const getBookingById = async (id, token) => {
 };
 export const deleteBooking = async ({token,id}) =>{
   try {
-    const res = await axios.delete(`${API_URL}/${id}`, {
+    const res = await axios.delete(`${API_URL_EXTENDED}/${id}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -100,7 +101,7 @@ export const deleteBooking = async ({token,id}) =>{
 
 export const getReport = async ( from, to ) => {
   const token = localStorage.getItem("adminToken");
-  const res = await axios.get(`${API_URL}/get-report?from=${from}&to=${to}`, {
+  const res = await axios.get(`${API_URL_EXTENDED}/get-report?from=${from}&to=${to}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
