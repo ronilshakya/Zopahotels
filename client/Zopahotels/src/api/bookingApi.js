@@ -15,6 +15,18 @@ export const searchAvailableRooms = async ({ checkIn, checkOut, adults, children
     throw error;
   }
 };
+export const getAvailableRoomNumbers = async ({ roomId, checkIn, checkOut }) => {
+  try {
+    const res = await axios.get(`${API_URL_EXTENDED}/available-room-numbers`, {
+      params: { roomId, checkIn, checkOut },
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Booking API Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
 
 export const createBooking = async ({payload,token}) =>{
     try {

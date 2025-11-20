@@ -12,23 +12,23 @@ const Login = () => {
   const [captchaToken, setCaptchaToken] = useState("");
   const widgetRef = useRef(null); // store widget ID for reset
 
-  useEffect(() => {
-    let interval;
+  // useEffect(() => {
+  //   let interval;
 
-    const loadWidget = () => {
-      if (window.turnstile && !widgetRef.current) {
-        widgetRef.current = window.turnstile.render("#turnstile-login", {
-          sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
-          callback: (token) => setCaptchaToken(token),
-        });
-        clearInterval(interval);
-      }
-    };
+  //   const loadWidget = () => {
+  //     if (window.turnstile && !widgetRef.current) {
+  //       widgetRef.current = window.turnstile.render("#turnstile-login", {
+  //         sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+  //         callback: (token) => setCaptchaToken(token),
+  //       });
+  //       clearInterval(interval);
+  //     }
+  //   };
 
-    interval = setInterval(loadWidget, 100);
+  //   interval = setInterval(loadWidget, 100);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,13 +38,13 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    if (!captchaToken) {
-      setError("Please complete the CAPTCHA");
-      return;
-    }
-     console.log("Submitting with token:", captchaToken);
+    // if (!captchaToken) {
+    //   setError("Please complete the CAPTCHA");
+    //   return;
+    // }
     try {
-      const data = await login({ ...form, turnstileToken: captchaToken });
+      // const data = await login({ ...form, turnstileToken: captchaToken });
+      const data = await login({ ...form });
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/");

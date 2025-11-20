@@ -8,11 +8,13 @@ const {
     updateBooking, 
     deleteBooking, 
     getBookingById, 
-    getReport
+    getReport,
+    getAvailableRoomNumbers
 } = require("../controllers/BookingController");
 const {auth, isAdmin} = require("../middleware/authMiddleware");
 
 router.get('/available', getAvailableRooms);
+router.get('/available-room-numbers', getAvailableRoomNumbers);
 router.get("/get-report", getReport);
 
 router.post('/',auth, createBooking);

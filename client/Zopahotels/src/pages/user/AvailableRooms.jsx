@@ -103,7 +103,7 @@ const AvailableRoomsPage = () => {
                     <span className="text-lg font-bold text-blue-600">
                       ${room.totalPrice}
                     </span>
-                    <span className="text-sm text-gray-500">Click to book</span>
+                    <span className="text-md text-white font-semibold p-3 rounded-lg bg-blue-600 ">Click to book</span>
                   </div>
                 </div>
               </div>

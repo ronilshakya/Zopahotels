@@ -68,7 +68,6 @@ const Rooms = () => {
             />
             <div className="p-4">
               <h2 className="text-xl font-semibold text-gray-800">{room.type}</h2>
-              <p className="text-gray-600 mb-2">Room Number: {room.rooms?.[0]?.roomNumber || "N/A"}</p>
               <p className="text-gray-700 font-medium mb-4">
                 {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {room.price ?? room.pricePerNight} / night
                 </p>

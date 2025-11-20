@@ -3,8 +3,10 @@ const router = express.Router();
 const {registerUser,verifyUser,login,getUserById,updateUser, deleteUser, getUsers,registerAdmin} = require('../controllers/authController');
 const {auth,isAdmin, verifyTurnstile} = require('../middleware/authMiddleware');
 
-router.post('/register', verifyTurnstile,registerUser);
-router.post('/login',verifyTurnstile,login);
+// router.post('/register', verifyTurnstile,registerUser);
+// router.post('/login',verifyTurnstile,login);
+router.post('/register',registerUser);
+router.post('/login',login);
 router.get("/verify/:token", verifyUser);
 router.get('/:id',auth,getUserById);
 

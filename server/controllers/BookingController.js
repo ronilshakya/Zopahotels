@@ -7,7 +7,7 @@ exports.createBooking = async (req, res) => {
     const userId = req.user.id;
 
     if (!rooms || rooms.length === 0) {
-      return res.status(400).json({ message: "At least one room must be selected" });
+      return res.status(400).json({ message: "At least one room type must be selected" });
     }
 
     const checkInDate = new Date(checkIn);
@@ -17,8 +17,9 @@ exports.createBooking = async (req, res) => {
     if (timeDiff <= 0) {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
+
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // reset time to midnight for clean comparison
+    today.setHours(0, 0, 0, 0);
 
     if (checkInDate < today) {
       return res.status(400).json({ message: "Check-in date cannot be in the past" });
@@ -27,43 +28,33 @@ exports.createBooking = async (req, res) => {
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
 
+    const bookingRooms = [];
+
     for (const r of rooms) {
       const roomDoc = await Room.findById(r.roomId);
       if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
-
-      const roomNumber = roomDoc.rooms.find(room => room.roomNumber === r.roomNumber);
-      if (!roomNumber) {
-        return res.status(400).json({ message: `Room number ${r.roomNumber} not found in ${roomDoc.type}` });
-      }
 
       if ((adults > roomDoc.adults) || (children > roomDoc.children)) {
         return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
       }
 
-      const conflictingBooking = await Booking.findOne({
-        "rooms.roomId": r.roomId,
-        "rooms.roomNumber": r.roomNumber,
-        checkIn: { $lt: checkOutDate },
-        checkOut: { $gt: checkInDate },
-        status: "pending"
+      totalPrice += roomDoc.price * nights;
+
+      bookingRooms.push({
+        roomId: r.roomId,
+        roomNumber: "Yet to be assigned" // <-- room number not assigned yet
       });
-
-      if (conflictingBooking) {
-        return res.status(400).json({ message: `Room ${r.roomNumber} of type ${roomDoc.type} is already booked for these dates` });
-      }
-
-      totalPrice += roomDoc.price * nights; 
     }
 
     const booking = await Booking.create({
       user: userId,
-      rooms,
+      rooms: bookingRooms,
       checkIn,
       checkOut,
       adults,
       children,
       totalPrice,
-      status: "pending" // pending since payment is physical
+      status: "pending"
     });
 
     res.status(201).json({ message: "Booking created", booking });
@@ -102,50 +93,50 @@ exports.getAvailableRooms = async (req, res) => {
 
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
-    const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+    const timeDiff = checkOutDate - checkInDate;
 
     if (timeDiff <= 0) {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
 
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
     const rooms = await Room.find();
     const availableRooms = [];
 
     for (const room of rooms) {
-      // check max adults and children
       if (room.adults >= parseInt(adults || 0) && room.children >= parseInt(children || 0)) {
+        // Check for **each room number** of this type
+        const freeRoomNumbers = [];
+
         for (const r of room.rooms) {
-          // Check if this specific room number is already booked
           const conflictingBooking = await Booking.findOne({
-            rooms: {
-              $elemMatch: {
-                roomId: room._id,
-                roomNumber: r.roomNumber
-              }
-            },
+            "rooms.roomId": room._id,
+            "rooms.roomNumber": r.roomNumber,
             status: { $in: ["pending", "confirmed"] },
             $or: [
               { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
               { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
               { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } }
             ]
-          });
+          }).lean();
 
           if (!conflictingBooking) {
-            availableRooms.push({
-              roomId: room._id,
-              type: room.type,
-              roomNumber: r.roomNumber,
-              pricePerNight: room.price,
-              totalPrice: room.price * nights,
-              nights,
-              maxAdults: room.adults,
-              maxChildren: room.children,
-              maxOccupancy: room.maxOccupancy,
-            });
+            freeRoomNumbers.push(r.roomNumber);
           }
+        }
+
+        if (freeRoomNumbers.length > 0) {
+          availableRooms.push({
+            roomId: room._id,
+            type: room.type,
+            pricePerNight: room.price,
+            totalPrice: room.price * nights,
+            nights,
+            maxAdults: room.adults,
+            maxChildren: room.children,
+            maxOccupancy: room.maxOccupancy,
+            availableRoomNumbers: freeRoomNumbers, // ✅ list of free numbers
+          });
         }
       }
     }
@@ -162,6 +153,8 @@ exports.getAvailableRooms = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 
 exports.updateBooking = async (req, res) => {
@@ -195,31 +188,26 @@ exports.updateBooking = async (req, res) => {
 
       for (const r of roomsToUpdate) {
         const roomDoc = await Room.findById(r.roomId);
-        if (!roomDoc) {
-          return res.status(404).json({ message: `Room with ID ${r.roomId} not found` });
-        }
+        if (!roomDoc) return res.status(404).json({ message: `Room with ID ${r.roomId} not found` });
 
-        const roomNumber = roomDoc.rooms.find(room => room.roomNumber === r.roomNumber);
-        if (!roomNumber) {
-          return res.status(400).json({ message: `Room number ${r.roomNumber} not found in ${roomDoc.type}` });
-        }
+        // Only check availability if admin assigned a room number
+        if (r.roomNumber && r.roomNumber !== "Yet to be assigned") {
+          const roomNumberExists = roomDoc.rooms.find(room => room.roomNumber === r.roomNumber);
+          if (!roomNumberExists) {
+            return res.status(400).json({ message: `Room number ${r.roomNumber} not found in ${roomDoc.type}` });
+          }
 
-        const adults = parseInt(updates.adults || booking.adults);
-        const children = parseInt(updates.children || booking.children);
-        if (adults > roomDoc.adults || children > roomDoc.children) {
-          return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
-        }
-
-        const conflictingBooking = await Booking.findOne({
-          _id: { $ne: booking._id },
-          "rooms.roomId": r.roomId,
-          "rooms.roomNumber": r.roomNumber,
-          checkIn: { $lt: checkOutDate },
-          checkOut: { $gt: checkInDate },
-          status: { $in: ["pending", "confirmed"] }
-        });
-        if (conflictingBooking) {
-          return res.status(400).json({ message: `Room ${r.roomNumber} of type ${roomDoc.type} is already booked for these dates` });
+          const conflictingBooking = await Booking.findOne({
+            _id: { $ne: booking._id },
+            "rooms.roomId": r.roomId,
+            "rooms.roomNumber": r.roomNumber,
+            checkIn: { $lt: checkOutDate },
+            checkOut: { $gt: checkInDate },
+            status: { $in: ["pending", "confirmed"] }
+          });
+          if (conflictingBooking) {
+            return res.status(400).json({ message: `Room ${r.roomNumber} of type ${roomDoc.type} is already booked for these dates` });
+          }
         }
 
         totalPrice += roomDoc.price * nights;
@@ -300,6 +288,51 @@ exports.getReport = async (req, res) => {
 
     res.json({ summary, bookings });
   } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getAvailableRoomNumbers = async (req, res) => {
+  try {
+    const { roomId, checkIn, checkOut, bookingId } = req.query;
+
+    if (!roomId || !checkIn || !checkOut) {
+      return res.status(400).json({ message: "roomId, checkIn, and checkOut are required" });
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    if (checkOutDate <= checkInDate) {
+      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+    }
+
+    // Fetch the room document
+    const roomDoc = await Room.findById(roomId);
+    if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
+
+    // Get all room numbers for this room type
+    const allRoomNumbers = roomDoc.rooms.map(r => r.roomNumber);
+
+    // Find room numbers already booked for this room type in the given date range
+    const bookedNumbers = await Booking.find({
+      _id: { $ne: bookingId || null }, // exclude current booking if updating
+      "rooms.roomId": roomId,
+      "rooms.roomNumber": { $in: allRoomNumbers },
+      status: { $in: ["pending", "confirmed"] },
+      $or: [
+        { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
+        { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
+        { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } },
+      ],
+    }).distinct("rooms.roomNumber");
+
+    // Available numbers = all - booked
+    const availableRoomNumbers = allRoomNumbers.filter(num => !bookedNumbers.includes(num));
+
+    res.json({ availableRoomNumbers });
+  } catch (error) {
+    console.error("Error in getAvailableRoomNumbers:", error.message);
     res.status(500).json({ message: error.message });
   }
 };

@@ -8,10 +8,9 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import Swal from "sweetalert2";
-import preloader from '../../assets/preloader.gif'
-import {useHotel} from '../../context/HotelContext'
-
-const API_URL = "http://api1.hotelnutopia.com";
+import preloader from '../../assets/preloader.gif';
+import { useHotel } from '../../context/HotelContext';
+import { API_URL } from "../../config";
 
 const SingleRoomPage = () => {
   const { id } = useParams();
