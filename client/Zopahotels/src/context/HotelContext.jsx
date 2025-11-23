@@ -13,14 +13,8 @@ export const HotelProvider = ({ children }) => {
 
   useEffect(() => {
     const fetchHotel = async () => {
-      try {
         const data = await getHotel();
         setHotel(data);
-      } catch (error) {
-        Swal.fire("Error", "Failed to fetch hotel details", "error");
-      } finally {
-        setLoading(false);
-      }
     };
 
     fetchHotel();

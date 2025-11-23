@@ -104,12 +104,13 @@ const EditBooking = () => {
     setForm({ ...form, selectedRooms: selectedOptions });
   };
 
-  const handleRoomNumberChange = (roomId, roomNumber) => {
-    const updatedRooms = form.selectedRooms.map(r =>
-      r.roomId === roomId ? { ...r, roomNumber } : r
+  const handleRoomNumberChange = (roomId, index, roomNumber) => {
+    const updatedRooms = form.selectedRooms.map((r, i) =>
+      r.roomId === roomId && i === index ? { ...r, roomNumber } : r
     );
     setForm({ ...form, selectedRooms: updatedRooms });
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -193,20 +194,50 @@ const EditBooking = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
-            {form.selectedRooms.map((r) => (
-              <div key={r.roomId} className="mb-3">
-                <p className="text-sm mb-1">{r.type}</p>
-                <select value={r.roomNumber || ''} onChange={(e) => handleRoomNumberChange(r.roomId, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                  <option value="">Select room number</option>
-                  {(availableRoomNumbers[r.roomId] || []).map(num => (
-                    <option key={num} value={num}>{num}</option>
-                  ))}
-                </select>
-              </div>
-            ))}
-          </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
+
+  {form.selectedRooms.map((room, index) => {
+    // All numbers for this room type
+    const options = availableRoomNumbers?.[room.roomId] || [];
+
+    // Numbers already chosen by other room entries
+    const selectedNumbers = form.selectedRooms
+      .filter(r => r.roomId === room.roomId && r.roomNumber && r !== room)
+      .map(r => r.roomNumber);
+
+    // Final dropdown options (remove selected duplicates)
+    const filteredOptions = options.filter(num => !selectedNumbers.includes(num));
+
+    return (
+      <div key={room.roomId + "-" + index} className="mb-3">
+        <p className="text-sm mb-1 font-semibold">{room.type}</p>
+
+        <select
+          value={room.roomNumber || ""}
+          onChange={(e) =>
+            handleRoomNumberChange(room.roomId, index, e.target.value)
+          }
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                     focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        >
+          <option value="">Select room number</option>
+
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map((num) => (
+              <option key={num} value={num}>
+                {num}
+              </option>
+            ))
+          ) : (
+            <option disabled>No rooms available</option>
+          )}
+        </select>
+      </div>
+    );
+  })}
+</div>
+
+
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>

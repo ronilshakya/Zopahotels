@@ -8,7 +8,7 @@ exports.createHotel = async (req, res) => {
             return res.status(400).json({ message: "Only one hotel can be created" });
         }
 
-        const { name, description, address, phone, email,currency } = req.body;
+        const { name, description, address, phone, email,currency,amenities } = req.body;
 
         // If logo is uploaded via multer
         let logo = null;
@@ -24,7 +24,8 @@ exports.createHotel = async (req, res) => {
             phone,
             email,
             logo,
-            currency
+            currency,
+            amenities
         });
 
         res.status(201).json({ message: "Hotel created successfully", hotel });
@@ -56,16 +57,31 @@ exports.updateHotel = async (req, res) => {
             return res.status(404).json({ message: "Hotel not found" });
         }
 
-        const allowedFields = ['name', 'description', 'address', 'phone', 'email', 'currency'];
+        const allowedFields = ['name', 'description', 'address', 'phone', 'email', 'currency', 'amenities'];
+
         allowedFields.forEach(field => {
             if (req.body[field] !== undefined) {
-                hotel[field] = req.body[field];
+                // For amenities, parse JSON if it's a string
+                if (field === 'amenities') {
+                    if (typeof req.body.amenities === 'string') {
+                        try {
+                            hotel.amenities = JSON.parse(req.body.amenities);
+                        } catch {
+                            hotel.amenities = [req.body.amenities];
+                        }
+                    } else {
+                        hotel.amenities = req.body.amenities;
+                    }
+                } else {
+                    hotel[field] = req.body[field];
+                }
             }
         });
 
         if (req.file) {
-        hotel.logo = req.file.filename; // multer saves filename
-        } 
+            hotel.logo = req.file.filename; // multer saves filename
+        }
+
         await hotel.save();
         res.json({ message: "Hotel updated successfully", hotel });
 
@@ -74,6 +90,7 @@ exports.updateHotel = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
 
 // DELETE HOTEL
 exports.deleteHotel = async (req, res) => {

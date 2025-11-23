@@ -126,3 +126,37 @@ export const registerAdmin = async (payload,token) =>{
     throw error;
   }
 }
+
+export const registerOfflineCustomer = async (payload,token) =>{
+  try {
+    const res = await axios.post(`${API_URL_EXTENDED}/offline-register`,payload,
+      {headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}` 
+      }});
+    return res.data;
+  } catch (error) {
+    console.log("Registration error" + error.message);
+    throw error;
+  }
+}
+
+export const forgotPassword = async (email) => {
+  try {
+    const res = await axios.post(`${API_URL_EXTENDED}/forgot-password`, { email });
+    return res.data;
+  } catch (error) {
+    console.log(error.message)
+    throw error;
+  }
+};
+
+export const resetPassword = async (token, newPassword) => {
+  try {
+    const res = await axios.post(`${API_URL_EXTENDED}/reset-password/${token}`, { password: newPassword });
+    return res.data;
+  } catch (error) {
+    console.log(error.message)
+    throw error;
+  }
+};

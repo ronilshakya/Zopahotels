@@ -1,8 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { createRoom } from "../../api/roomApi";
-import Swal from 'sweetalert2'
+import Swal from 'sweetalert2';
+import { useHotel } from "../../context/HotelContext";
 
 const AddRoom = () => {
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const { hotel } = useHotel();
   const [form, setForm] = useState({
     type: "",
     description: "",
@@ -10,13 +14,20 @@ const AddRoom = () => {
     adults: 1,
     children: 0,
     maxOccupancy: 1,
-    amenities: "",
-    rooms: "",
-    images: [], // will store File objects
+    amenities: [],
+    rooms: [{ roomNumber: "" }],
+    images: [],
   });
 
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState("");
+  const [hotelAmenities, setHotelAmenities] = useState([]);
+
+  // Load hotel amenities from context
+  useEffect(() => {
+    if (hotel?.amenities?.length) {
+      setHotelAmenities(hotel.amenities);
+      setForm(prev => ({ ...prev, amenities: [] })); // start with none selected
+    }
+  }, [hotel]);
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -24,6 +35,14 @@ const AddRoom = () => {
       setForm({ ...form, images: files });
     } else {
       setForm({ ...form, [name]: value });
+    }
+  };
+
+  const handleAmenityChange = (amenity) => {
+    if (form.amenities.includes(amenity)) {
+      setForm({ ...form, amenities: form.amenities.filter(a => a !== amenity) });
+    } else {
+      setForm({ ...form, amenities: [...form.amenities, amenity] });
     }
   };
 
@@ -43,24 +62,20 @@ const AddRoom = () => {
       formData.append("adults", form.adults);
       formData.append("children", form.children);
       formData.append("maxOccupancy", form.maxOccupancy);
+      formData.append("amenities", JSON.stringify(form.amenities));
+      formData.append("rooms", JSON.stringify(form.rooms));
 
-      // amenities and rooms as JSON strings
-      formData.append("amenities", JSON.stringify(form.amenities.split(",").map(a => a.trim())));
-      formData.append("rooms", JSON.stringify(form?.rooms.split(",").map(r => ({ roomNumber: r.trim() }))));
-
-      // append all image files
-      Array.from(form.images).forEach(file => {
-        formData.append("images", file);
-      });
+      Array.from(form.images).forEach(file => formData.append("images", file));
 
       await createRoom(formData, token);
-      // setMessage("Room added successfully!");
+
       Swal.fire({
         title: 'Room added successfully!',
         icon: "success",
         confirmButtonText: "OK",
         position: "top-end"
       });
+
       setForm({
         type: "",
         description: "",
@@ -68,10 +83,11 @@ const AddRoom = () => {
         adults: 1,
         children: 0,
         maxOccupancy: 1,
-        amenities: "",
-        rooms: "",
+        amenities: [],
+        rooms: [{ roomNumber: "" }],
         images: [],
       });
+
     } catch (error) {
       console.error(error);
       setMessage(error.response?.data?.message || error.message || "Failed to add room");
@@ -170,28 +186,60 @@ const AddRoom = () => {
 
           {/* Amenities */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Amenities (comma-separated)</label>
-            <input
-              type="text"
-              name="amenities"
-              value={form.amenities}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="WiFi, TV, Air Conditioning"
-            />
+            <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {hotelAmenities.map((amenity) => (
+                <label key={amenity} className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    value={amenity}
+                    checked={form.amenities.includes(amenity)}
+                    onChange={() => handleAmenityChange(amenity)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  />
+                  {amenity}
+                </label>
+              ))}
+            </div>
           </div>
 
           {/* Room Numbers */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Room Numbers (comma-separated)</label>
-            <input
-              type="text"
-              name="rooms"
-              value={form.rooms}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="101, 102, 103"
-            />
+          <div className="mt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Room Numbers</label>
+            {form.rooms.map((room, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                <input
+                  type="text"
+                  value={room.roomNumber}
+                  onChange={(e) => {
+                    const updated = [...form.rooms];
+                    updated[index].roomNumber = e.target.value;
+                    setForm({ ...form, rooms: updated });
+                  }}
+                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+                  placeholder="Room Number"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = form.rooms.filter((_, i) => i !== index);
+                    setForm({ ...form, rooms: updated });
+                  }}
+                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  disabled={form.rooms.length === 1}
+                >
+                  X
+                </button>
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={() => setForm({ ...form, rooms: [...form.rooms, { roomNumber: "" }] })}
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              + Add Room
+            </button>
           </div>
 
           {/* Images */}

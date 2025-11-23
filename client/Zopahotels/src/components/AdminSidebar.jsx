@@ -13,7 +13,7 @@ const AdminSidebar = () => {
     { to: "/admin/dashboard", label: "Dashboard" },
     { to: "/admin/admin-rooms", label: "Rooms" },
     { to: "/admin/all-bookings", label: "Bookings" },
-    { to: "/admin/all-users", label: "Clients" },
+    { to: "/admin/all-users", label: "Customers" },
     { to: "/admin/all-admins", label: "Users" },
     { to: "/admin/booking-calender", label: "Calender" },
     { to: "/admin/reports", label: "Reports" },

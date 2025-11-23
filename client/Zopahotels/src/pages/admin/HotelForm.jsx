@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createHotel, getHotel, updateHotel } from "../../api/hotelApi";
 import Swal from "sweetalert2";
 import { useHotel } from "../../context/HotelContext";
-import {API_URL} from '../../config'
+import { API_URL } from "../../config";
 
 const HotelForm = ({ mode }) => {
   const { setHotel } = useHotel();
@@ -16,17 +16,33 @@ const HotelForm = ({ mode }) => {
     email: "",
     logo: null,
     currency: "USD",
+    amenities: [""],
   });
   const [preview, setPreview] = useState(null);
   const [existingLogo, setExistingLogo] = useState(null);
   const [loading, setLoading] = useState(false);
-  const {hotel} = useHotel();
 
   useEffect(() => {
     if (mode === "edit") {
       const fetchHotel = async () => {
         try {
           const hotel = await getHotel();
+
+          // Parse amenities safely
+          let amenitiesArray = [""];
+          if (hotel.amenities) {
+            if (Array.isArray(hotel.amenities)) {
+              amenitiesArray = hotel.amenities;
+            } else {
+              try {
+                const parsed = JSON.parse(hotel.amenities);
+                amenitiesArray = Array.isArray(parsed) ? parsed : [parsed];
+              } catch {
+                amenitiesArray = [hotel.amenities];
+              }
+            }
+          }
+
           setHotelData({
             name: hotel.name || "",
             description: hotel.description || "",
@@ -35,9 +51,11 @@ const HotelForm = ({ mode }) => {
             email: hotel.email || "",
             logo: null,
             currency: hotel.currency || "USD",
+            amenities: amenitiesArray.length ? amenitiesArray : [""],
           });
+
           setExistingLogo(hotel.logo ? `${API_URL}uploads/${hotel.logo}` : null);
-          setPreview(null)
+          setPreview(null);
         } catch (err) {
           Swal.fire("Error", `Failed to fetch hotel details: ${err}`, "error");
         }
@@ -46,20 +64,38 @@ const HotelForm = ({ mode }) => {
     }
   }, [mode]);
 
+  // Handle normal field change
   const handleChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "logo") {
-  const file = files[0];
-  if (file && file.type.startsWith("image/")) {
-    setHotelData((prev) => ({ ...prev, logo: file }));
-    setPreview(URL.createObjectURL(file)); // new preview
-  } else {
-    setPreview(null);
-  }
-}
-
+      const file = files[0];
+      if (file && file.type.startsWith("image/")) {
+        setHotelData((prev) => ({ ...prev, logo: file }));
+        setPreview(URL.createObjectURL(file));
+      } else {
+        setPreview(null);
+      }
+    } else {
+      setHotelData((prev) => ({ ...prev, [name]: value }));
+    }
   };
 
+  // Amenities handlers
+  const handleAmenityChange = (index, value) => {
+    const updated = [...hotelData.amenities];
+    updated[index] = value;
+    setHotelData({ ...hotelData, amenities: updated });
+  };
+
+  const addAmenity = () =>
+    setHotelData({ ...hotelData, amenities: [...hotelData.amenities, ""] });
+
+  const removeAmenity = (index) => {
+    const updated = hotelData.amenities.filter((_, i) => i !== index);
+    setHotelData({ ...hotelData, amenities: updated.length ? updated : [""] });
+  };
+
+  // Submit form
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -67,7 +103,14 @@ const HotelForm = ({ mode }) => {
     try {
       const formData = new FormData();
       Object.keys(hotelData).forEach((key) => {
-        if (hotelData[key] !== null) formData.append(key, hotelData[key]);
+        if (key === "amenities") {
+          formData.append(
+            key,
+            JSON.stringify(hotelData[key].filter((a) => a.trim() !== ""))
+          );
+        } else if (hotelData[key] !== null) {
+          formData.append(key, hotelData[key]);
+        }
       });
 
       const token = localStorage.getItem("adminToken");
@@ -135,7 +178,7 @@ const HotelForm = ({ mode }) => {
           />
         </div>
 
-        {/* Contact Grid */}
+        {/* Phone & Email */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium text-gray-700">Phone</label>
@@ -161,40 +204,69 @@ const HotelForm = ({ mode }) => {
           </div>
         </div>
 
-        {/* Logo Upload */}
+        {/* Amenities */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Amenities
+          </label>
+          {hotelData.amenities.map((amenity, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={amenity}
+                onChange={(e) => handleAmenityChange(index, e.target.value)}
+                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                placeholder="Enter amenity"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => removeAmenity(index)}
+                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                disabled={hotelData.amenities.length === 1}
+              >
+                X
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            onClick={addAmenity}
+            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+          >
+            + Add Amenity
+          </button>
+        </div>
+
+        {/* Logo */}
         <div>
           <label className="text-sm font-medium text-gray-700 mb-2 block">Hotel Logo</label>
           <div className="flex items-center gap-4">
-  <input
-    type="file"
-    name="logo"
-    accept="image/*"
-    className="bg-white px-4 py-2 border rounded-lg"
-    onChange={handleChange}
-  />
-
-  {/* Show existing logo only if no new preview */}
-  {!preview && existingLogo && (
-    <img
-      src={existingLogo}
-      alt="Current Logo"
-      className="w-32 h-32 object-cover border rounded-lg shadow"
-    />
-  )}
-
-  {/* Show new preview when a file is selected */}
-  {preview && (
-    <img
-      src={preview}
-      alt="Logo Preview"
-      className="w-32 h-32 object-cover border rounded-lg shadow"
-    />
-  )}
-</div>
-
-
+            <input
+              type="file"
+              name="logo"
+              accept="image/*"
+              className="bg-white px-4 py-2 border rounded-lg"
+              onChange={handleChange}
+            />
+            {!preview && existingLogo && (
+              <img
+                src={existingLogo}
+                alt="Current Logo"
+                className="w-32 h-32 object-cover border rounded-lg shadow"
+              />
+            )}
+            {preview && (
+              <img
+                src={preview}
+                alt="Logo Preview"
+                className="w-32 h-32 object-cover border rounded-lg shadow"
+              />
+            )}
+          </div>
         </div>
 
+        {/* Currency */}
         <div>
           <label className="block mb-2 font-medium">Currency</label>
           <select
@@ -208,7 +280,6 @@ const HotelForm = ({ mode }) => {
             <option value="NPR">NPR – Nepalese Rupee (₨)</option>
           </select>
         </div>
-
 
         {/* Submit */}
         <button

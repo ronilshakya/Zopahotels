@@ -78,13 +78,6 @@ const AllAdmins = () => {
     );
   }
 
-  if (allAdmins.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-lg text-gray-600">No admins found.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -93,6 +86,10 @@ const AllAdmins = () => {
           <h2 className="text-2xl font-bold text-gray-800 mb-6">All Admins</h2>
           <Button onClick={handleAddAdmin}>Add Admin</Button>
         </div>
+        {allAdmins.length === 0 ? (
+          <p className="text-lg text-gray-600">No admins found.</p>
+        ) : (
+
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>
@@ -133,6 +130,7 @@ const AllAdmins = () => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

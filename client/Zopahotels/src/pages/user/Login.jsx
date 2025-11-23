@@ -12,23 +12,23 @@ const Login = () => {
   const [captchaToken, setCaptchaToken] = useState("");
   const widgetRef = useRef(null); // store widget ID for reset
 
-  // useEffect(() => {
-  //   let interval;
+  useEffect(() => {
+    let interval;
 
-  //   const loadWidget = () => {
-  //     if (window.turnstile && !widgetRef.current) {
-  //       widgetRef.current = window.turnstile.render("#turnstile-login", {
-  //         sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
-  //         callback: (token) => setCaptchaToken(token),
-  //       });
-  //       clearInterval(interval);
-  //     }
-  //   };
+    const loadWidget = () => {
+      if (window.turnstile && !widgetRef.current) {
+        widgetRef.current = window.turnstile.render("#turnstile-login", {
+          sitekey: import.meta.env.VITE_TURNSTILE_SITE_KEY,
+          callback: (token) => setCaptchaToken(token),
+        });
+        clearInterval(interval);
+      }
+    };
 
-  //   interval = setInterval(loadWidget, 100);
+    interval = setInterval(loadWidget, 100);
 
-  //   return () => clearInterval(interval);
-  // }, []);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -38,13 +38,12 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    // if (!captchaToken) {
-    //   setError("Please complete the CAPTCHA");
-    //   return;
-    // }
+    if (!captchaToken) {
+      setError("Please complete the CAPTCHA");
+      return;
+    }
     try {
-      // const data = await login({ ...form, turnstileToken: captchaToken });
-      const data = await login({ ...form });
+      const data = await login({ ...form, turnstileToken: captchaToken });
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
       navigate("/");
@@ -115,6 +114,17 @@ const Login = () => {
               className="text-blue-600 font-medium hover:underline"
             >
               Sign Up
+            </button>
+          </p>
+        </div>
+        <div className="mt-4 text-center">
+          <p className="text-gray-600 text-sm">
+            Forgot your password?{" "}
+            <button
+              onClick={() => navigate("/forgot-password")}
+              className="text-blue-600 text-sm font-medium hover:underline"
+            >
+              Forgot Password
             </button>
           </p>
         </div>

@@ -31,6 +31,10 @@ import Settings from './pages/admin/Settings';
 import HotelForm from './pages/admin/HotelForm';
 import FaviconUpdater from './FaviconUpdater';
 import AddAdmin from './pages/admin/AddAdmin';
+import AddClient from './pages/admin/AddClient';
+import ForgotPassword from './pages/user/ForgotPassword';
+import ResetPassword from './pages/user/ResetPassword';
+import CheckoutPage from './pages/user/CheckoutPage';
 
 // Wrapper to get `mode` from URL and pass as prop
 const HotelFormWrapper = () => {
@@ -46,6 +50,8 @@ export default function App() {
         {/* User routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         <Route element={<UserLayout />}>
           <Route path="/" element={<SearchRoomsPage />} />
@@ -55,6 +61,7 @@ export default function App() {
           <Route path="/rooms" element={<Rooms />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/edit-profile" element={<EditProfile />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
         </Route>
 
         {/* Admin login */}
@@ -83,6 +90,7 @@ export default function App() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="settings" element={<Settings />} />
           <Route path="add-admin" element={<AddAdmin />} />
+          <Route path="add-client" element={<AddClient />} />
 
           {/* Hotel form routes */}
           <Route path="hotel-form/:mode" element={<HotelFormWrapper />} />

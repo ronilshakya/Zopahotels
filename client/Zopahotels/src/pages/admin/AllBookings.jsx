@@ -16,9 +16,6 @@ const AllBookings = () => {
     navigate(`/admin/edit-booking/${id}`); 
   }
   
-  // const handleAddBooking = () => {
-  //   navigate(`/admin/add-booking`); 
-  // }
 
   const handleDeleteBooking = async (id) => {
   // Confirmation first
@@ -87,19 +84,20 @@ const AllBookings = () => {
     </div>
   );
 
-  if (bookings.length === 0) return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <p className="text-lg text-gray-600">No bookings found.</p>
-    </div>
-  );
+
+
+  const handleAddBooking= () => navigate("/admin/add-booking");
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">All Bookings</h2>
-          {/* <Button onClick={handleAddBooking}>Add Booking</Button> */}
-        </div>
+          <div className="flex justify-between items-baseline">
+            <h2 className="text-2xl font-bold text-gray-800 mb-6">All Bookings</h2>
+            <Button onClick={handleAddBooking}>Add Booking</Button>
+          </div>
+          {bookings.length === 0 ?(
+            <p className="text-lg text-gray-600">No bookings found.</p>
+          ):(
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>
@@ -158,6 +156,7 @@ const AllBookings = () => {
             </tbody>
           </table>
         </div>
+          )}
       </div>
     </div>
   );

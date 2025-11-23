@@ -21,10 +21,11 @@ const hotelSchema = new mongoose.Schema({
         type: String 
     },
     currency: {
-    type: String,
-    default: "USD", // or "NPR", depending on your market
-    enum: ["USD", "NPR"] // restrict to supported currencies
-  },
+        type: String,
+        default: "USD", // or "NPR", depending on your market
+        enum: ["USD", "NPR"] // restrict to supported currencies
+    },
+    amenities: [String],
 },{timestamps:true});
 
 module.exports = mongoose.model("Hotel", hotelSchema);

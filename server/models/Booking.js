@@ -46,6 +46,11 @@ const BookingSchema = new mongoose.Schema({
         enum: ["pending", "confirmed", "cancelled"],
         default: "pending"
     },
+    numberOfRooms:{
+        type: Number,
+        required: true,
+        default: 1
+    }
 },{timestamps:true});
 
 module.exports = mongoose.model("Booking", BookingSchema);

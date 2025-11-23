@@ -3,6 +3,7 @@ import { deleteUser, getAllUsers } from '../../api/authApi';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import preloader from '../../assets/preloader.gif'
+import Button from '../../components/Button';
 
 const AllUsers = () => {
   const [allUsers, setAllUsers] = useState([]);
@@ -77,18 +78,20 @@ const handleDeleteUser = async (id) => {
     );
   }
 
-  if (allUsers.length === 0) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <p className="text-lg text-gray-600">No clients found.</p>
-      </div>
-    );
-  }
+
+  const handleAddClient= () => navigate("/admin/add-client");
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6">All Clients</h2>
+        <div className="flex justify-between items-baseline">
+          <h2 className="text-2xl font-bold text-gray-800 mb-6">All Customers</h2>
+          <Button onClick={handleAddClient}>Add Customer</Button>
+        </div>
+        {allUsers.length === 0 ? (
+          <p className="text-lg text-gray-600">No customers found.</p>
+        ) : (
+
         <div className="overflow-x-auto">
           <table className="w-full table-auto border-collapse">
             <thead>
@@ -131,6 +134,7 @@ const handleDeleteUser = async (id) => {
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </div>
   );

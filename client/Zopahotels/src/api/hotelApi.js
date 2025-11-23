@@ -19,17 +19,12 @@ export const createHotel = async (payload,token) =>{
       }
       
       export const getHotel = async () =>{
-        try {
           const res = await axios.get(`${API_URL_EXTENDED}/`, {
             headers: {
               "Content-Type": "application/json"
             }
           });
           return res.data;
-        } catch (error) {
-          console.log(error.message);
-          throw error;
-        }
       }
       
       export const updateHotel = async (payload,token) =>{

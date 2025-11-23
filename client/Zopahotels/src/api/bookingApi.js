@@ -27,6 +27,18 @@ export const getAvailableRoomNumbers = async ({ roomId, checkIn, checkOut }) => 
     throw error;
   }
 };
+export const getAvailableRoomNumbersByDate = async ({ roomId, checkIn, checkOut }) => {
+  try {
+    const res = await axios.get(`${API_URL_EXTENDED}/available-room-numbers-by-date`, {
+      params: { roomId, checkIn, checkOut },
+    });
+
+    return res.data;
+  } catch (error) {
+    console.error("Booking API Error:", error.response?.data || error.message);
+    throw error;
+  }
+};
 
 export const createBooking = async ({payload,token}) =>{
     try {
@@ -117,4 +129,19 @@ export const getReport = async ( from, to ) => {
     headers: { Authorization: `Bearer ${token}` },
   });
   return res.data;
+};
+
+
+export const createBookingAdmin = async ({ payload, token }) => {
+  try {
+    const res = await axios.post(`${API_URL_EXTENDED}/create-booking-admin`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
 };

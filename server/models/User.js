@@ -53,7 +53,9 @@ const userSchema = new mongoose.Schema({
         default: "active"
     },
 
-    verificationToken: String
+    verificationToken: String,
+    resetToken: String,
+    resetTokenExpiry: Date
     
 },{timestamps:true});
 module.exports = mongoose.model("User",userSchema);

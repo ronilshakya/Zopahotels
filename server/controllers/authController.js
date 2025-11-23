@@ -266,3 +266,140 @@ exports.registerAdmin = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
+
+exports.registerOfflineCustomer = async (req,res) =>{
+    try {
+        let { name, email, phone, address, city, state, zip, country, password } = req.body;
+        name = name?.trim();
+        email = email?.trim();
+        phone = phone?.trim();
+        address = address?.trim();
+        city = city?.trim();
+        state = state?.trim();
+        zip = zip?.trim();
+        country = country?.trim();
+        password = password?.trim();
+        if (!name || !email || !phone || !address || !city || !state || !zip || !country) {
+            return res.status(400).json({ message: "All fields except password are required" });
+        }
+        if (!validator.isEmail(email))
+            return res.status(400).json({ message: "Invalid email address" });
+
+        if (!validator.isMobilePhone(phone, "any"))
+        return res.status(400).json({ message: "Invalid phone number" });
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+        return res.status(400).json({ message: "A user with this email already exists" });
+        }
+
+        // If no password provided → auto-generate
+        if (!password) {
+        password = Math.random().toString(36).slice(-8); // random 8-char password
+        }
+
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create verified user without verification email
+        const user = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        phone,
+        address,
+        city,
+        state,
+        zip,
+        country,
+        isVerified: true,   // <- Important
+        verificationToken: null,
+        role: "user",       // offline customers are always normal users
+        });
+
+        res.status(201).json({
+            message: "Offline customer registered successfully",
+            customer: user,
+            generatedPassword: password, // show to admin only
+        });
+    }catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+}
+
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ message: "Email is required" });
+
+    const user = await User.findOne({ email });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Create reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour
+
+    user.resetToken = resetToken;
+    user.resetTokenExpiry = resetTokenExpiry;
+    await user.save();
+
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+
+    // Send email
+    const transporter = nodemailer.createTransport({
+      host: process.env.MAIL_HOST,
+      port: Number(process.env.MAIL_PORT),
+      secure: true,
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
+    });
+
+    const mailOptions = {
+      from: `"Hotel Booking" <${process.env.MAIL_USER}>`,
+      to: user.email,
+      subject: "Reset Your Password",
+      html: `
+        <h3>Hello ${user.name}</h3>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetUrl}" style="padding:10px 20px;background:#4CAF50;color:white;text-decoration:none;">Reset Password</a>
+        <p>This link will expire in 1 hour.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({ message: "Password reset link sent to your email" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password } = req.body;
+
+    if (!password) return res.status(400).json({ message: "Password is required" });
+
+    const user = await User.findOne({
+      resetToken: token,
+      resetTokenExpiry: { $gt: Date.now() },
+    });
+
+    if (!user) return res.status(400).json({ message: "Invalid or expired token" });
+
+    const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(password, salt);
+    user.resetToken = undefined;
+    user.resetTokenExpiry = undefined;
+
+    await user.save();
+
+    res.status(200).json({ message: "Password has been reset successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};

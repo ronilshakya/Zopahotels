@@ -20,30 +20,34 @@ exports.createBooking = async (req, res) => {
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     if (checkInDate < today) {
       return res.status(400).json({ message: "Check-in date cannot be in the past" });
     }
 
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
-
     const bookingRooms = [];
 
+    // Loop through each selected room type
     for (const r of rooms) {
       const roomDoc = await Room.findById(r.roomId);
       if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
 
-      if ((adults > roomDoc.adults) || (children > roomDoc.children)) {
+      const quantity = r.quantity || 1;
+
+      if (adults > roomDoc.adults || children > roomDoc.children) {
         return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
       }
 
-      totalPrice += roomDoc.price * nights;
+      totalPrice += roomDoc.price * nights * quantity;
 
-      bookingRooms.push({
-        roomId: r.roomId,
-        roomNumber: "Yet to be assigned" // <-- room number not assigned yet
-      });
+      // Add each room instance to bookingRooms
+      for (let i = 0; i < quantity; i++) {
+        bookingRooms.push({
+          roomId: r.roomId,
+          roomNumber: "Yet to be assigned",
+        });
+      }
     }
 
     const booking = await Booking.create({
@@ -54,12 +58,13 @@ exports.createBooking = async (req, res) => {
       adults,
       children,
       totalPrice,
-      status: "pending"
+      status: "pending",
+      numberOfRooms: rooms.reduce((sum, r) => sum + (r.quantity || 1), 0), // total number of rooms booked
     });
 
     res.status(201).json({ message: "Booking created", booking });
-
   } catch (error) {
+    console.error("createBooking error:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -333,6 +338,120 @@ exports.getAvailableRoomNumbers = async (req, res) => {
     res.json({ availableRoomNumbers });
   } catch (error) {
     console.error("Error in getAvailableRoomNumbers:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+exports.getAvailableRoomNumbersByDate = async (req, res) => {
+  try {
+    const { roomId, checkIn, checkOut } = req.query;
+
+    if (!roomId || !checkIn || !checkOut) {
+      return res.status(400).json({ message: "roomId, checkIn, and checkOut are required" });
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    if (checkOutDate <= checkInDate) {
+      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+    }
+
+    // 1️⃣ Fetch the room document
+    const roomDoc = await Room.findById(roomId);
+    if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
+
+    // 2️⃣ Get all room numbers for this room type
+    const allRoomNumbers = roomDoc.rooms.map(r => r.roomNumber);
+
+    // 3️⃣ Find booked room numbers in the given date range
+    const bookedNumbers = await Booking.find({
+      "rooms.roomId": roomId,
+      "rooms.roomNumber": { $in: allRoomNumbers },
+      status: { $in: ["pending", "confirmed"] },
+      $or: [
+        { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
+        { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
+        { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } },
+      ],
+    }).distinct("rooms.roomNumber");
+
+    // 4️⃣ Compute available room numbers
+    const availableRoomNumbers = allRoomNumbers.filter(num => !bookedNumbers.includes(num));
+
+    res.json({ availableRoomNumbers });
+  } catch (error) {
+    console.error("Error in getAvailableRoomNumbers:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+exports.createBookingAdmin = async (req, res) => {
+  try {
+    const { userId, rooms, checkIn, checkOut, adults, children, numberOfRooms } = req.body;
+
+    if (!userId) {
+      return res.status(400).json({ message: "User ID is required" });
+    }
+
+    if (!rooms || rooms.length === 0) {
+      return res.status(400).json({ message: "At least one room type must be selected" });
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+
+    if (checkOutDate <= checkInDate) {
+      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (checkInDate < today) {
+      return res.status(400).json({ message: "Check-in date cannot be in the past" });
+    }
+
+    const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    let totalPrice = 0;
+    const bookingRooms = [];
+
+    for (const r of rooms) {
+      const roomDoc = await Room.findById(r.roomId);
+      if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
+
+      if ((adults > roomDoc.adults) || (children > roomDoc.children)) {
+        return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
+      }
+
+      totalPrice += roomDoc.price * nights * numberOfRooms;
+
+      for (let i = 0; i < numberOfRooms; i++) {
+        bookingRooms.push({
+          roomId: r.roomId,
+          roomNumber: r.roomNumber || "Yet to be assigned" // allow admin to assign room number
+        });
+      }
+    }
+
+    const booking = await Booking.create({
+      user: userId,
+      rooms: bookingRooms,
+      checkIn,
+      checkOut,
+      adults,
+      children,
+      totalPrice,
+      status: "pending",
+      numberOfRooms
+    });
+
+    res.status(201).json({ message: "Booking created by admin", booking });
+
+  } catch (error) {
+    console.error("Admin createBooking error:", error.message);
     res.status(500).json({ message: error.message });
   }
 };

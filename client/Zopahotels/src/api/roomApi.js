@@ -6,7 +6,7 @@ const API_URL_EXTENDED = `${API_URL}api/rooms`;
 export const getRoomById = async (id)=>{
     try {
         const res = await axios.get(`${API_URL_EXTENDED}/${id}`);
-        console.log(res.data);
+        // console.log(res.data);
         return res.data;
     } catch (error) {
         console.log(error.message);
