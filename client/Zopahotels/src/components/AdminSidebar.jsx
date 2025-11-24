@@ -5,7 +5,7 @@ import { useHotel } from "../context/HotelContext";
 import { API_URL } from "../config";
 
 const AdminSidebar = () => {
-  const {hotel,loading} = useHotel();
+  const {hotel} = useHotel();
   const [isOpen, setIsOpen] = useState(false);
   const toggleSidebar = () => setIsOpen(!isOpen);
 
@@ -22,14 +22,18 @@ const AdminSidebar = () => {
 
   return (
     <>
+    <div className="top-0 max-md:h-20 right-0 left-0 bg-white max-md:fixed relative z-20 flex items-center">
       {/* Mobile Toggle Button */}
+      {hotel && (
+        <img src={`${API_URL}uploads/${hotel.logo}`} className="w-32 md:hidden ml-4" alt="logo" />
+      )}
       <button
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-gray-800 text-white rounded-md focus:outline-none"
+        className="md:hidden absolute right-4 top-1/2 -translate-y-1/2 z-50 p-2 bg-gray-800 text-white rounded-md focus:outline-none"
         onClick={toggleSidebar}
       >
         {isOpen ? (
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 z-50"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -43,7 +47,7 @@ const AdminSidebar = () => {
           </svg>
         ) : (
           <svg
-            className="w-6 h-6"
+            className="w-6 h-6 z-50"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -57,6 +61,7 @@ const AdminSidebar = () => {
           </svg>
         )}
       </button>
+      </div>
 
       {/* Sidebar */}
       <div
@@ -107,7 +112,7 @@ const AdminSidebar = () => {
       {/* Overlay for mobile when sidebar is open */}
       {isOpen && (
         <div
-          className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-30"
+          className="md:hidden fixed inset-0 bg-black/30 bg-opacity-50 z-20"
           onClick={toggleSidebar}
         ></div>
       )}

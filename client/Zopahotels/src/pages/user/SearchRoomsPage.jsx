@@ -23,6 +23,7 @@ const SearchRoomsPage = () => {
   });
   const [numRooms, setNumRooms] = useState({}); // Track number of rooms per roomId
   const [availableRoomCounts, setAvailableRoomCounts] = useState({}); // Track available counts per roomId
+  const [imgLoaded, setImgLoaded] = React.useState(false);
 
   // -------------------------------
   // Fetch rooms with images + available room counts
@@ -190,22 +191,35 @@ const SearchRoomsPage = () => {
           </p>
         ) : (
           <div className="flex flex-col gap-4 mt-6">
-            {availableRooms.map((room, i) => (
+            {availableRooms.map((room, i) => {
+              
+              return(
               <div
                 key={i}
                 className="bg-white flex flex-col md:flex-row items-center rounded-lg overflow-hidden duration-200"
                 style={{boxShadow: "rgba(50, 50, 93, 0.25) 0px 2px 5px -1px, rgba(0, 0, 0, 0.3) 0px 1px 3px -1px"}}
                 
               >
+                 {!imgLoaded && (
+                  <img
+                    src={preloader}
+                    className="w-48 h-full object-contain rounded-lg m-4 animate-pulse"
+                    alt="loading"
+                  />
+                )}
+
+                {/* REAL IMAGE */}
                 <img
-                  src={room.image ? `${API_URL}uploads/${room.image}` : "/images/room-placeholder.jpg"}
+                  src={room.image ? `${API_URL}uploads/${room.image}` : preloader}
                   alt={room.type}
-                  className="w-48 h-full object-cover rounded-lg m-4"
+                  className={`w-48 h-full object-cover rounded-lg m-4 ${imgLoaded ? "block" : "hidden"}`}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgLoaded(true)}
                 />
 
                 <div className="p-4 flex-1">
                   <h3 className="text-xl font-semibold text-gray-800">
-                    {room.type} - Room {room.roomNumber}
+                    {room.type}
                   </h3>
 
                   <p className="text-gray-600">
@@ -250,7 +264,7 @@ const SearchRoomsPage = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         )}
 

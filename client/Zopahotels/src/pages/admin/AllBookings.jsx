@@ -123,8 +123,15 @@ const AllBookings = () => {
                     {booking.user?.name}
                   </td>
                   <td className="px-4 py-3 text-gray-600 text-sm">
-                    {booking.rooms.map((r) => `${r.roomId?.type} - ${r.roomNumber}`).join(", ")}
+                    <ul className="flex flex-row md:flex-col flex-wrap gap-1 md:gap-0 w-[200px]">
+                      {booking.rooms.map((r, i) => (
+                        <li key={i} className="mr-2">
+                          {r.roomId?.type} - {r.roomNumber}
+                        </li>
+                      ))}
+                    </ul>
                   </td>
+
                   <td className="px-4 py-3 text-gray-600 text-sm">
                     {new Date(booking.checkIn).toLocaleDateString()}
                   </td>

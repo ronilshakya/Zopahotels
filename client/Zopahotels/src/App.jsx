@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, useParams } from 'react-router-
 import Navbar from './components/Navbar';
 import AdminSidebar from './components/AdminSidebar';
 import SearchRoomsPage from './pages/user/SearchRoomsPage';
-import AvailableRoomsPage from './pages/user/AvailableRooms';
 import SingleRoomPage from './pages/user/SingleRoomPage';
 import Login from './pages/user/Login';
 import MyBookingsPage from './pages/user/MyBookingsPage';
@@ -55,7 +54,6 @@ export default function App() {
 
         <Route element={<UserLayout />}>
           <Route path="/" element={<SearchRoomsPage />} />
-          <Route path="/available-rooms" element={<AvailableRoomsPage />} />
           <Route path="/room/:id" element={<SingleRoomPage />} />
           <Route path="/my-bookings" element={<MyBookingsPage />} />
           <Route path="/rooms" element={<Rooms />} />

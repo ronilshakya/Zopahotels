@@ -110,7 +110,16 @@ const AdminDashboard = () => {
               {latestBookings.map((b) => (
                 <tr key={b._id} className="border-b hover:bg-gray-50">
                   <td className="px-4 py-2">{b.user?.name || "Deleted User"}</td>
-                  <td className="px-4 py-2">{b.rooms.map(r => `${r.roomId?.type}-${r.roomNumber}`).join(", ")}</td>
+                  {/* <td className="px-4 py-2">{b.rooms.map(r => `${r.roomId?.type}-${r.roomNumber}`).join(", ")}</td> */}
+                  <td className="px-4 py-3 text-gray-600 text-sm">
+                    <ul className="flex flex-row md:flex-col flex-wrap gap-1 md:gap-0 w-[200px]">
+                      {b.rooms.map((r, i) => (
+                        <li key={i} className="mr-2">
+                          {r.roomId?.type} - {r.roomNumber}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
                   <td className="px-4 py-2">{new Date(b.checkIn).toLocaleDateString()}</td>
                   <td className="px-4 py-2">{new Date(b.checkOut).toLocaleDateString()}</td>
                   <td className="px-4 py-2 capitalize">{b.status}</td>

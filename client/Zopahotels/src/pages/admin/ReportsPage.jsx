@@ -66,7 +66,7 @@ const ReportsPage = () => {
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Booking Report</h2>
 
         {/* Filters + Buttons */}
-        <div className="flex gap-4 mb-6 print:hidden">
+        <div className="flex flex-col md:flex-row gap-4 mb-6 print:hidden">
           <div>
             <label className="block text-sm font-medium text-gray-600">From</label>
             <input
@@ -147,9 +147,15 @@ const ReportsPage = () => {
                   return (
                     <tr key={b._id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{b.user?.name || "Deleted User"}</td>
-                      <td className="px-4 py-2 text-sm">
-                        {b.rooms.map((r) => `${r.roomId?.type} - ${r.roomNumber}`).join(", ")}
-                      </td>
+                      <td className="px-4 py-2 text-gray-600 text-sm">
+                    <ul className="flex flex-row md:flex-col flex-wrap gap-1 md:gap-0 w-[200px]">
+                      {b.rooms.map((r, i) => (
+                        <li key={i} className="mr-2">
+                          {r.roomId?.type} - {r.roomNumber}
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
                       <td className="px-4 py-2 text-sm">{new Date(b.checkIn).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-sm">{new Date(b.checkOut).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-sm">{nights}</td>
