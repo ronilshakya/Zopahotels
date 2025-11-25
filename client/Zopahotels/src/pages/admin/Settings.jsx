@@ -12,12 +12,8 @@ const Settings = () => {
   const token = localStorage.getItem('adminToken')
 
   const fetchHotel = async () => {
-    try {
       const data = await getHotel()
       setHotel(data)
-    } catch (error) {
-      // Swal.fire('Error', error.message, 'error')
-    }
   }
 
   useEffect(() => {
@@ -45,6 +41,7 @@ const Settings = () => {
   }
 
   return (
+    <div className="min-h-screen bg-gray-100 p-6">
     <div className="p-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-semibold mb-6">Hotel Settings</h1>
 
@@ -94,6 +91,7 @@ const Settings = () => {
           </div>
         </div>
       )}
+    </div>
     </div>
   )
 }

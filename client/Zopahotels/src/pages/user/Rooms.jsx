@@ -10,6 +10,7 @@ const Rooms = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const {hotel} = useHotel();
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     const fetchRooms = async () => {
@@ -56,6 +57,13 @@ const Rooms = () => {
             key={room._id}
             className="bg-white shadow-lg rounded-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
           >
+            {!imgLoaded && (
+              <img
+                src={preloader}
+                className="w-full h-48 object-contain rounded-lg m-4 animate-pulse"
+                alt="loading"
+              />
+            )}
             <img
               onClick={() => navigate(`/room/${room._id}`)}
               src={
@@ -64,7 +72,8 @@ const Rooms = () => {
                   : "https://via.placeholder.com/400x250"
               }
               alt={room.type}
-              className="w-full h-48 object-cover"
+              className={`w-full h-48 object-cover ${imgLoaded ? "block" : "hidden"}`}
+              onLoad={() => setImgLoaded(true)}
             />
             <div className="p-4">
               <h2 className="text-xl font-semibold text-gray-800">{room.type}</h2>

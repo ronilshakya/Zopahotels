@@ -145,3 +145,16 @@ export const createBookingAdmin = async ({ payload, token }) => {
     throw error;
   }
 };
+export const searchBookings = async (token, search = '', startDate = '', endDate = '', page = 1, limit = 10) => {
+  try {
+    const params = { search, startDate, endDate, page, limit };
+    const res = await axios.get(`${API_URL_EXTENDED}/search-bookings`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};

@@ -27,7 +27,6 @@ const MyBookingsPage = () => {
         setBookings(sorted);
       } catch (error) {
         console.error(error);
-        alert("Failed to fetch your bookings");
       } finally {
         setLoading(false);
       }

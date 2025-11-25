@@ -38,7 +38,6 @@ const EditProfile = () => {
         });
       } catch (error) {
         console.error(error);
-        alert("Failed to fetch user profile");
       } finally {
         setLoading(false);
       }

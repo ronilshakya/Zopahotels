@@ -4,6 +4,8 @@ import { getAvailableRoomNumbersByDate, searchAvailableRooms } from "../../api/b
 import { API_URL } from "../../config";
 import { getRoomById } from "../../api/roomApi";
 import preloader from '../../assets/preloader.gif';
+import RoomModal from "../../components/RoomModal";
+import { useHotel } from "../../context/HotelContext";
 
 const SearchRoomsPage = () => {
   const navigate = useNavigate();
@@ -13,6 +15,8 @@ const SearchRoomsPage = () => {
     .toISOString()
     .split("T")[0];
 
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
   const [availableRooms, setAvailableRooms] = useState([]);
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -24,6 +28,7 @@ const SearchRoomsPage = () => {
   const [numRooms, setNumRooms] = useState({}); // Track number of rooms per roomId
   const [availableRoomCounts, setAvailableRoomCounts] = useState({}); // Track available counts per roomId
   const [imgLoaded, setImgLoaded] = React.useState(false);
+  const {hotel} = useHotel();
 
   // -------------------------------
   // Fetch rooms with images + available room counts
@@ -60,7 +65,6 @@ const SearchRoomsPage = () => {
       setAvailableRooms(roomsWithImages);
     } catch (error) {
       console.error(error);
-      alert("Failed to fetch available rooms");
     } finally {
       setLoading(false);
     }
@@ -79,7 +83,16 @@ const SearchRoomsPage = () => {
     loadRooms(form);
   };
 
-  const viewSingleRoom = (roomId) => navigate(`/room/${roomId}`);
+  const viewRoomModal = (room) => {
+    setSelectedRoom(room);
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setSelectedRoom(null);
+    setModalOpen(false);
+  };
+
 
   const handleBookSelectedRooms = () => {
   const selectedRooms = availableRooms
@@ -112,15 +125,15 @@ const SearchRoomsPage = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-lg md:max-w-5xl w-full bg-white rounded-lg shadow-lg p-6 my-4">
-        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">
-          Book a Room
+      <div className="max-w-lg md:max-w-5xl w-full bg-white rounded-lg shadow-lg px-6 py-10 my-4">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6 text-center">
+          Book Your Stay at {hotel ? hotel.name : "Our Hotel"}
         </h2>
 
         {/* FORM */}
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 flex flex-col md:flex-row md:items-center justify-center gap-3"
+          className="space-y-4 flex flex-col md:flex-row md:items-center justify-center gap-3 py-2"
         >
           <div>
             <label className="block text-sm font-medium text-gray-700">Check-in Date</label>
@@ -257,7 +270,7 @@ const SearchRoomsPage = () => {
 
                     <span
                       className="text-blue-600 font-semibold underline cursor-pointer"
-                      onClick={() => viewSingleRoom(room.roomId)}
+                      onClick={() => viewRoomModal(room)}
                     >
                       View Details
                     </span>
@@ -288,7 +301,15 @@ const SearchRoomsPage = () => {
         )}
 
       </div>
+      {modalOpen && selectedRoom && (
+        <RoomModal
+          room={selectedRoom}
+          onClose={closeModal}
+        />
+      )}
+
     </div>
+    
   );
 };
 

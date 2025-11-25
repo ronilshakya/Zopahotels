@@ -49,7 +49,7 @@ const BookingCalendar = () => {
   }, [token]);
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-lg">
+    <div className="p-6 min-h-screen bg-gray-100 rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold mb-4">Booking Calendar</h2>
       <FullCalendar
         plugins={[dayGridPlugin, interactionPlugin]}

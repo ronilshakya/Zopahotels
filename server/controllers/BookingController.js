@@ -1,5 +1,6 @@
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
+const User = require("../models/User");
 
 exports.createBooking = async (req, res) => {
   try {
@@ -390,7 +391,7 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
 
 exports.createBookingAdmin = async (req, res) => {
   try {
-    const { userId, rooms, checkIn, checkOut, adults, children, numberOfRooms } = req.body;
+    const { userId, rooms, checkIn, checkOut, adults, children } = req.body;
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -402,19 +403,19 @@ exports.createBookingAdmin = async (req, res) => {
 
     const checkInDate = new Date(checkIn);
     const checkOutDate = new Date(checkOut);
+    const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
 
-    if (checkOutDate <= checkInDate) {
+    if (timeDiff <= 0) {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     if (checkInDate < today) {
       return res.status(400).json({ message: "Check-in date cannot be in the past" });
     }
 
-    const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
     const bookingRooms = [];
 
@@ -422,16 +423,18 @@ exports.createBookingAdmin = async (req, res) => {
       const roomDoc = await Room.findById(r.roomId);
       if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
 
-      if ((adults > roomDoc.adults) || (children > roomDoc.children)) {
+      const quantity = Number(r.numRooms || 1);
+
+      if (adults > roomDoc.adults || children > roomDoc.children) {
         return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
       }
 
-      totalPrice += roomDoc.price * nights * numberOfRooms;
+      totalPrice += Number(roomDoc.price || 0) * nights * quantity;
 
-      for (let i = 0; i < numberOfRooms; i++) {
+      for (let i = 0; i < quantity; i++) {
         bookingRooms.push({
           roomId: r.roomId,
-          roomNumber: r.roomNumber || "Yet to be assigned" // allow admin to assign room number
+          roomNumber: "Yet to be assigned",
         });
       }
     }
@@ -445,13 +448,82 @@ exports.createBookingAdmin = async (req, res) => {
       children,
       totalPrice,
       status: "pending",
-      numberOfRooms
+      numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.numRooms) || 1), 0),
     });
 
     res.status(201).json({ message: "Booking created by admin", booking });
-
   } catch (error) {
     console.error("Admin createBooking error:", error.message);
     res.status(500).json({ message: error.message });
+  }
+};
+
+exports.searchBookings = async (req, res) => {
+  try {
+    const { search = "", startDate, endDate, page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+    let query = {};
+
+    // Text search
+    if (search) {
+      query.$or = [
+        { bookingId: { $regex: search, $options: "i" } },
+        { "rooms.roomNumber": { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // Search users by name/email
+    const users = await User.find({
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } }
+      ]
+    }).select("_id");
+
+    if (users.length > 0) {
+      query.$or = query.$or || [];
+      query.$or.push({ user: { $in: users.map(u => u._id) } });
+    }
+
+    // Date filtering
+    if (startDate) {
+      const start = new Date(startDate);
+      let end;
+
+      if (endDate) {
+        end = new Date(endDate);
+      } else {
+        // Single date search → end = start + 1 day
+        end = new Date(start);
+        end.setDate(end.getDate() + 1);
+      }
+
+      query.$and = query.$and || [];
+      query.$and.push({
+        checkIn: { $lt: end },
+        checkOut: { $gt: start }
+      });
+    }
+
+    const total = await Booking.countDocuments(query);
+    const bookings = await Booking.find(query)
+      .populate("user", "name email")
+      .populate("rooms.roomId", "type price")
+      .sort({ createdAt: -1 })
+      .skip(Number(skip))
+      .limit(Number(limit));
+
+    res.status(200).json({
+      bookings,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error("Booking Fetch Error:", error);
+    res.status(500).json({ message: "Server Error" });
   }
 };

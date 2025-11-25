@@ -53,7 +53,8 @@ const AddClient = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-50 rounded-2xl shadow-lg mt-8">
+    <div className="min-h-screen bg-gray-100 py-10">
+    <div className="max-w-4xl mx-auto p-6 bg-white rounded-2xl shadow-lg mt-8">
       <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
         Register Offline Customer
       </h1>
@@ -217,6 +218,7 @@ const AddClient = () => {
           {loading ? "Registering..." : "Register Customer"}
         </button>
       </form>
+    </div>
     </div>
   );
 };

@@ -11,7 +11,8 @@ const {
     getReport,
     getAvailableRoomNumbers,
     getAvailableRoomNumbersByDate,
-    createBookingAdmin
+    createBookingAdmin,
+    searchBookings
 } = require("../controllers/BookingController");
 const {auth, isAdmin} = require("../middleware/authMiddleware");
 
@@ -22,10 +23,11 @@ router.get("/get-report", getReport);
 router.get('/me',auth, getMyBookings);
 
 router.post('/',auth, createBooking);
+router.get('/',auth,isAdmin, getAllBookings);
+router.get('/search-bookings',auth,isAdmin, searchBookings);
 router.post('/create-booking-admin',auth,isAdmin, createBookingAdmin);
 router.get('/:id',auth,isAdmin, getBookingById);
 router.put('/:id',auth, isAdmin, updateBooking);
 router.delete('/:id',auth, isAdmin, deleteBooking);
-router.get('/',auth,isAdmin, getAllBookings);
 
 module.exports = router;
