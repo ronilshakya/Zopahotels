@@ -403,3 +403,40 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.searchUsers = async (req, res) => {
+     try {
+    const { search = "", page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    let query = {role: { $ne: "admin" }};
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: "i" } },
+        { email: { $regex: search, $options: "i" } },
+        { phone: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    const total = await User.countDocuments(query);
+    const users = await User.find(query)
+      .sort({ createdAt: -1 })
+      .skip(Number(skip))
+      .limit(Number(limit))
+      .select("name email phone createdAt"); // select only required fields
+
+    res.status(200).json({
+      users,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    console.error("User Search Error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+}

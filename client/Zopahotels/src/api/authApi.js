@@ -160,3 +160,18 @@ export const resetPassword = async (token, newPassword) => {
     throw error;
   }
 };
+
+export const searchUsers = async (token, search = '', page = 1, limit = 10) => {
+  try {
+    const params = { search, page, limit };
+    const res = await axios.get(`${API_URL_EXTENDED}/search-users`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+
