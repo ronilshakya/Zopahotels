@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import Button from '../../components/Button'
-import { getHotel, deleteHotel } from '../../api/hotelApi'
+import { getHotel } from '../../api/hotelApi'
 import { useNavigate, Outlet } from 'react-router-dom'
 import Swal from 'sweetalert2'
 import { API_URL } from '../../config'
@@ -10,7 +10,6 @@ import HotelForm from './HotelForm'
 const Settings = () => {
   const [hotel, setHotel] = useState(null)
   const navigate = useNavigate()
-  const token = localStorage.getItem('adminToken')
 
   const fetchHotel = async () => {
       const data = await getHotel()
@@ -21,25 +20,6 @@ const Settings = () => {
     fetchHotel()
   }, [])
 
-  const handleDelete = async () => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'This will delete the hotel permanently!',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Yes, delete it!'
-    })
-
-    if (result.isConfirmed) {
-      try {
-        await deleteHotel(token)
-        Swal.fire('Deleted!', 'Hotel deleted successfully.', 'success')
-        setHotel(null)
-      } catch (error) {
-        Swal.fire('Error', error.response?.data?.message || error.message, 'error')
-      }
-    }
-  }
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">

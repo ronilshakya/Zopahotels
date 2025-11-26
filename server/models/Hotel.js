@@ -26,6 +26,7 @@ const hotelSchema = new mongoose.Schema({
         enum: ["USD", "NPR"] // restrict to supported currencies
     },
     amenities: [String],
+    bookingSource: [String],
 },{timestamps:true});
 
 module.exports = mongoose.model("Hotel", hotelSchema);

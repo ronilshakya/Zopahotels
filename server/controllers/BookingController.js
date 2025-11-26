@@ -173,7 +173,7 @@ exports.updateBooking = async (req, res) => {
     }
 
 
-    const allowedFields = ["rooms", "checkIn", "checkOut", "status", "adults", "children"];
+    const allowedFields = ["rooms", "checkIn", "checkOut", "status", "adults", "children","bookingSource"];
     const updates = {};
 
     allowedFields.forEach((key) => {
@@ -393,7 +393,7 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
 
 exports.createBookingAdmin = async (req, res) => {
   try {
-    const { userId, rooms, checkIn, checkOut, adults, children } = req.body;
+    const { userId, rooms, checkIn, checkOut, adults, children, bookingSource } = req.body;
 
     if (!userId) {
       return res.status(400).json({ message: "User ID is required" });
@@ -451,7 +451,8 @@ exports.createBookingAdmin = async (req, res) => {
       totalPrice,
       status: "pending",
       numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.numRooms) || 1), 0),
-      bookingId: new mongoose.Types.ObjectId().toString().slice(-6)
+      bookingId: new mongoose.Types.ObjectId().toString().slice(-6),
+      bookingSource
     });
 
     res.status(201).json({ message: "Booking created by admin", booking });

@@ -54,7 +54,10 @@ const BookingSchema = new mongoose.Schema({
     bookingId:{
         type: String,
         unique: true,
-    }
+    },
+    bookingSource:[{
+        type: String
+    }]
 },{timestamps:true});
 
 module.exports = mongoose.model("Booking", BookingSchema);

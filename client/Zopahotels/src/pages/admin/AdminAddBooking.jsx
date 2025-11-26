@@ -4,6 +4,7 @@ import { createBookingAdmin, getAvailableRoomNumbersByDate } from "../../api/boo
 import { useNavigate } from "react-router-dom";
 import { getAllUsers } from "../../api/authApi";
 import { getAllRooms } from "../../api/roomApi";
+import { useHotel } from "../../context/HotelContext";
 
 const AdminAddBooking = () => {
   const today = new Date().toISOString().split("T")[0];
@@ -19,6 +20,8 @@ const AdminAddBooking = () => {
   const [filteredUsers, setFilteredUsers] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [availableRoomCounts, setAvailableRoomCounts] = useState({});
+  const [bookingSource, setBookingSource] = useState("");
+  const { hotel } = useHotel();
 
   const [bookingData, setBookingData] = useState({
     userId: "",
@@ -46,6 +49,15 @@ const AdminAddBooking = () => {
     };
     fetchUsersRooms();
   }, [adminToken]);
+
+  useEffect(() => {
+    if (hotel && hotel.bookingSource) {
+      const sourcesArray = Array.isArray(hotel.bookingSource)
+        ? hotel.bookingSource
+        : JSON.parse(hotel.bookingSource || "[]");
+      setBookingSource(sourcesArray[0] || ""); // default to first source
+    }
+  }, [hotel]);
 
   // Filter users when typing
   useEffect(() => {
@@ -114,7 +126,8 @@ const AdminAddBooking = () => {
     e.preventDefault();
     setLoading(true);
     try {
-      const res = await createBookingAdmin({ payload: bookingData, token: adminToken });
+      const payload = { ...bookingData, bookingSource }; // include bookingSource
+      const res = await createBookingAdmin({ payload, token: adminToken });
       Swal.fire("Success", res.message, "success");
       navigate("/admin/all-bookings");
     } catch (err) {
@@ -256,6 +269,32 @@ const AdminAddBooking = () => {
           >
             Add Room
           </button>
+
+          {/* Booking Source */}
+          {hotel?.bookingSource && (
+            <div>
+              <label className="text-sm font-medium text-gray-700">Booking Source</label>
+              <select
+                value={bookingSource}
+                onChange={(e) => setBookingSource(e.target.value)}
+                className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                required
+              >
+                {Array.isArray(hotel.bookingSource)
+                  ? hotel.bookingSource.map((source, i) => (
+                      <option key={i} value={source}>
+                        {source}
+                      </option>
+                    ))
+                  : JSON.parse(hotel.bookingSource || "[]").map((source, i) => (
+                      <option key={i} value={source}>
+                        {source}
+                      </option>
+                    ))}
+              </select>
+            </div>
+          )}
+
 
           {/* Guests */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
