@@ -81,19 +81,19 @@ const HotelForm = ({ mode }) => {
   };
 
   // Amenities handlers
-  const handleAmenityChange = (index, value) => {
-    const updated = [...hotelData.amenities];
-    updated[index] = value;
-    setHotelData({ ...hotelData, amenities: updated });
-  };
+  // const handleAmenityChange = (index, value) => {
+  //   const updated = [...hotelData.amenities];
+  //   updated[index] = value;
+  //   setHotelData({ ...hotelData, amenities: updated });
+  // };
 
-  const addAmenity = () =>
-    setHotelData({ ...hotelData, amenities: [...hotelData.amenities, ""] });
+  // const addAmenity = () =>
+  //   setHotelData({ ...hotelData, amenities: [...hotelData.amenities, ""] });
 
-  const removeAmenity = (index) => {
-    const updated = hotelData.amenities.filter((_, i) => i !== index);
-    setHotelData({ ...hotelData, amenities: updated.length ? updated : [""] });
-  };
+  // const removeAmenity = (index) => {
+  //   const updated = hotelData.amenities.filter((_, i) => i !== index);
+  //   setHotelData({ ...hotelData, amenities: updated.length ? updated : [""] });
+  // };
 
   // Submit form
   const handleSubmit = async (e) => {
@@ -132,7 +132,8 @@ const HotelForm = ({ mode }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-gray-50 rounded-2xl shadow-lg mt-8">
+    <div className="min-h-screen bg-gray-100 p-4">
+    <div className="max-w-2xl mx-auto p-6 bg-white rounded-2xl shadow-lg">
       <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
         {mode === "edit" ? "Edit Hotel Details" : "Add New Hotel"}
       </h1>
@@ -205,7 +206,7 @@ const HotelForm = ({ mode }) => {
         </div>
 
         {/* Amenities */}
-        <div>
+        {/* <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Amenities
           </label>
@@ -236,7 +237,7 @@ const HotelForm = ({ mode }) => {
           >
             + Add Amenity
           </button>
-        </div>
+        </div> */}
 
         {/* Logo */}
         <div>
@@ -290,6 +291,7 @@ const HotelForm = ({ mode }) => {
           {loading ? "Saving..." : mode === "edit" ? "Update Hotel" : "Add Hotel"}
         </button>
       </form>
+    </div>
     </div>
   );
 };
