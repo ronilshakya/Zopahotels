@@ -14,6 +14,7 @@ const RoomsPage = () => {
   const {hotel} = useHotel();
   const navigate = useNavigate();
   const token = localStorage.getItem("adminToken");
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const handleAddRoom = () => navigate("/admin/add-room");
   const handleEditRoom = (id) => navigate(`/admin/edit-room/${id}`);
@@ -97,11 +98,20 @@ const handleDeleteRoom = async (id) => {
               key={room._id}
               className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-2xl transition-shadow duration-300"
             >
+              {!imgLoaded && (
+                <img
+                  src={preloader}
+                  className="w-full h-48 object-contain rounded-lg m-4 animate-pulse"
+                  alt="loading"
+                />
+              )}
               <img
                 src={`${API_URL}uploads/${room?.images[0]}`}
                 alt="Room"
-                className="w-full h-48 object-cover"
+                className={`w-full h-48 object-cover ${imgLoaded ? "block" : "hidden"}`}
+                onLoad={() => setImgLoaded(true)}
               />
+
               <div className="p-4">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{room.type}</h3>
                 {/* <p className="text-gray-600 mb-2">{room.description}</p> */}

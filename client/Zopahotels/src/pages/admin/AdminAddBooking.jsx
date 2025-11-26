@@ -197,7 +197,7 @@ const AdminAddBooking = () => {
 
           {/* Rooms */}
           {bookingData.rooms.map((r, index) => (
-            <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end mb-4">
+            <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end mb-4">
               {/* Room Type */}
               <div>
                 <label className="text-sm font-medium text-gray-700">Room</label>
@@ -241,7 +241,7 @@ const AdminAddBooking = () => {
                 <button
                   type="button"
                   onClick={() => removeRoom(index)}
-                  className="text-red-500 mt-6"
+                  className="text-white bg-red-500 mt-6 p-2 rounded-lg hover:bg-red-600"
                 >
                   Remove
                 </button>

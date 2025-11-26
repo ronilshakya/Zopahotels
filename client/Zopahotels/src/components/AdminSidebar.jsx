@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { adminLogout } from "../api/authApi";
 import { useHotel } from "../context/HotelContext";
 import { API_URL } from "../config";
+import { BiLogOut } from "react-icons/bi";
 
 const AdminSidebar = () => {
   const {hotel} = useHotel();
@@ -98,13 +99,13 @@ const AdminSidebar = () => {
         <div className="p-4 border-t border-gray-700">
           <NavLink
             to="/admin"
-            className="block p-2 rounded-md hover:bg-red-600 transition duration-200"
+            className="flex items-center gap-2 p-2 rounded-md text-white bg-red-500 hover:bg-red-600 transition duration-200"
             onClick={() => {
               setIsOpen(false);
               adminLogout();
             }}
           >
-            Logout
+            <BiLogOut size={20}/> Logout
           </NavLink>
         </div>
       </div>

@@ -67,7 +67,7 @@ const MyBookingsPage = () => {
       >
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-lg font-semibold text-gray-800">
-            Booking #{booking._id.slice(-6)}
+            Booking id: {booking.bookingId}
           </h2>
           <span
             className={`px-2 py-1 text-sm rounded-full font-medium ${

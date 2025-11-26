@@ -1,3 +1,4 @@
+const  mongoose  = require("mongoose");
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const User = require("../models/User");
@@ -61,6 +62,7 @@ exports.createBooking = async (req, res) => {
       totalPrice,
       status: "pending",
       numberOfRooms: rooms.reduce((sum, r) => sum + (r.quantity || 1), 0), // total number of rooms booked
+      bookingId: new mongoose.Types.ObjectId().toString().slice(-6)
     });
 
     res.status(201).json({ message: "Booking created", booking });
@@ -449,6 +451,7 @@ exports.createBookingAdmin = async (req, res) => {
       totalPrice,
       status: "pending",
       numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.numRooms) || 1), 0),
+      bookingId: new mongoose.Types.ObjectId().toString().slice(-6)
     });
 
     res.status(201).json({ message: "Booking created by admin", booking });
@@ -467,8 +470,7 @@ exports.searchBookings = async (req, res) => {
     // Text search
     if (search) {
       query.$or = [
-        { bookingId: { $regex: search, $options: "i" } },
-        { "rooms.roomNumber": { $regex: search, $options: "i" } }
+        { bookingId: { $regex: search, $options: "i" } }
       ];
     }
 
