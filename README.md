@@ -17,3 +17,5 @@ MAIL_PASS
 PROD_SERVER_URL=http://localhost:3000 (backend url)
 REDIRECTION_AFTER_VALIDATE=http://localhost:5173/login (frontend url)
 TURNSTILE_SECRET
+
+modify config.js for api in client

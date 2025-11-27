@@ -141,9 +141,9 @@ export const registerOfflineCustomer = async (payload,token) =>{
   }
 }
 
-export const forgotPassword = async (email) => {
+export const forgotPassword = async ({email,turnstileToken}) => {
   try {
-    const res = await axios.post(`${API_URL_EXTENDED}/forgot-password`, { email });
+    const res = await axios.post(`${API_URL_EXTENDED}/forgot-password`, { email, turnstileToken });
     return res.data;
   } catch (error) {
     console.log(error.message)
