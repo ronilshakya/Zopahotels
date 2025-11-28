@@ -79,7 +79,7 @@ const RoomModal = ({ room, onClose }) => {
             </div>
             )}
         </div>
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 overflow-y-scroll max-h-[300px]">
           <h1 className="text-xl mb-2 font-semibold text-gray-800">{room.type}</h1>
           <p className="text-gray-700 mb-2 text-sm">
             Max Adults: {room.maxAdults}, Max Children: {room.maxChildren}
@@ -92,11 +92,26 @@ const RoomModal = ({ room, onClose }) => {
           {/* Amenities */}
           <div className="mt-2">
             <h2 className="font-semibold mb-1">Amenities:</h2>
-            <p className="text-gray-600">
-              {(roomDetails?.amenities || room.amenities || []).length > 0
-              ? (roomDetails?.amenities || room.amenities).join(", ")
-              : "No amenities listed."}
-          </p>
+            <div className="mt-2 flex flex-wrap gap-3">
+          {roomDetails.amenities && roomDetails.amenities.length > 0 ? (
+            roomDetails.amenities.map((amenity) => (
+              <div
+                key={amenity._id}
+                className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full shadow-sm"
+              >
+                <img
+                  src={`${API_URL}uploads/amenities/${amenity.icon}`}
+                  alt={amenity.name}
+                  className="w-5 h-5 object-cover rounded"
+                />
+                <span className="text-gray-700 text-sm">{amenity.name}</span>
+              </div>
+            ))
+          ) : (
+            <p className="text-gray-500">No amenities listed.</p>
+          )}
+        </div>
+
         </div>
         </div>
       </div>

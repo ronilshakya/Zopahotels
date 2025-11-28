@@ -25,7 +25,13 @@ const hotelSchema = new mongoose.Schema({
         default: "USD", // or "NPR", depending on your market
         enum: ["USD", "NPR"] // restrict to supported currencies
     },
-    amenities: [String],
+    amenities: [
+        {
+        _id: { type: mongoose.Schema.Types.ObjectId, auto: true }, // unique amenity ID
+        name: { type: String, required: true }, 
+        icon: { type: String, required: true } 
+        }
+    ],
     bookingSource: [String],
 },{timestamps:true});
 

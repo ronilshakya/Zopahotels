@@ -1,3 +1,4 @@
+const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 
 exports.createRoom = async (req, res) => {
@@ -66,42 +67,32 @@ exports.updateRoom = async (req, res) => {
     const room = await Room.findById(req.params.id);
     if (!room) return res.status(404).json({ message: "Room not found" });
 
+    const hotel = await Hotel.findOne();
+    if (!hotel) return res.status(404).json({ message: "Hotel not found" });
 
-    // Parse rooms if provided and a string
+    // Parse rooms if sent as string
     if (req.body.rooms && typeof req.body.rooms === "string") {
       try {
         req.body.rooms = JSON.parse(req.body.rooms);
-        if (!Array.isArray(req.body.rooms)) {
-          throw new Error("Rooms must be an array");
-        }
-      } catch (error) {
-        console.error("Error parsing rooms:", error.message);
-        return res.status(400).json({ message: `Invalid rooms format: ${error.message}` });
+      } catch {
+        return res.status(400).json({ message: "Invalid rooms format" });
       }
     }
 
-    // Parse amenities if provided and a string
-    if (req.body.amenities && typeof req.body.amenities === "string") {
+    // Parse selected amenity IDs from frontend
+    let selectedAmenityIds = [];
+    if (req.body.amenities) {
       try {
-        req.body.amenities = JSON.parse(req.body.amenities);
-        if (!Array.isArray(req.body.amenities)) {
-          throw new Error("Amenities must be an array");
-        }
-      } catch (error) {
-        console.error("Error parsing amenities:", error.message);
-        return res.status(400).json({ message: `Invalid amenities format: ${error.message}` });
+        selectedAmenityIds = JSON.parse(req.body.amenities); // array of _id strings
+      } catch {
+        return res.status(400).json({ message: "Invalid amenities format" });
       }
     }
 
-    // Handle existingImages
-    let existingImages = [];
-    if (req.body.existingImages) {
-      existingImages = Array.isArray(req.body.existingImages)
-        ? req.body.existingImages
-        : [req.body.existingImages];
-    } else {
-      existingImages = room.images; // Preserve existing images if not provided
-    }
+    // Map selected IDs to full amenity objects from hotel
+    const selectedAmenities = hotel.amenities.filter(a =>
+      selectedAmenityIds.includes(a._id.toString())
+    );
 
     // Allowed fields to update
     const allowedUpdates = [
@@ -111,32 +102,39 @@ exports.updateRoom = async (req, res) => {
       "adults",
       "children",
       "rooms",
-      "maxOccupancy",
-      "amenities",
+      "maxOccupancy"
     ];
 
-    // Update the room fields only if provided
-    allowedUpdates.forEach((key) => {
-      if (req.body[key] !== undefined) {
-        room[key] = req.body[key];
-      }
+    allowedUpdates.forEach(key => {
+      if (req.body[key] !== undefined) room[key] = req.body[key];
     });
 
-    // Update images only if new images or existingImages are provided
-    const newImages = req.files ? req.files.map((f) => f.filename) : [];
+    // Set amenities
+    room.amenities = selectedAmenities;
+
+    // Handle images
+    let existingImages = [];
+    if (req.body.existingImages) {
+      existingImages = Array.isArray(req.body.existingImages)
+        ? req.body.existingImages
+        : [req.body.existingImages];
+    } else {
+      existingImages = room.images;
+    }
+
+    const newImages = req.files ? req.files.map(f => f.filename) : [];
     if (req.body.existingImages || req.files) {
       room.images = [...existingImages, ...newImages];
     }
 
     await room.save();
-
     res.status(200).json({ message: "Room updated successfully", room });
+
   } catch (error) {
-    console.error("Error in updateRoom:", error.message);
+    console.error("Error in updateRoom:", error);
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
-
 
 
 exports.deleteRoom = async (req, res) => {

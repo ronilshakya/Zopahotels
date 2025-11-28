@@ -84,15 +84,28 @@ const SingleRoomPage = () => {
             </div>
             <div className="bg-green-50 p-4 rounded-lg shadow-sm">
               <p className="text-gray-700 text-sm">Amenities</p>
-              <ul className="list-disc list-inside mt-2 text-gray-600">
+              <div className="mt-4">
                 {room.amenities && room.amenities.length > 0 ? (
-                  room.amenities.map((amenity, idx) => (
-                    <li key={idx}>{amenity}</li>
-                  ))
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {room.amenities.map((amenity) => (
+                      <div
+                        key={amenity._id}
+                        className="flex items-center gap-2 p-2"
+                      >
+                        <img
+                          src={`${API_URL}uploads/amenities/${amenity.icon}`}
+                          alt={amenity.name}
+                          className="w-6 h-6 object-cover rounded"
+                        />
+                        <span className="text-gray-700 font-medium">{amenity.name}</span>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
-                  <li>No amenities listed.</li>
+                  <p className="text-gray-500">No amenities listed.</p>
                 )}
-              </ul>
+              </div>
+
             </div>
           </div>
         </div>

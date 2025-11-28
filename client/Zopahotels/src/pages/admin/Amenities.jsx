@@ -1,127 +1,204 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { getHotel, updateHotel } from "../../api/hotelApi";
+import { addAmenity, getAmenities, updateAmenity, deleteAmenity } from "../../api/hotelApi";
 import Swal from "sweetalert2";
-import Button from "../../components/Button";
+import { API_URL } from "../../config";
 
 const Amenities = () => {
-  const [hotel, setHotel] = useState(null);
-  const [amenities, setAmenities] = useState([""]);
+  const [amenities, setAmenities] = useState([]);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  const [name, setName] = useState("");
+  const [icon, setIcon] = useState(null);
+  const [editIndex, setEditIndex] = useState(null);
 
-  const fetchHotel = async () => {
+  const token = localStorage.getItem("adminToken");
+
+  // Fetch amenities
+  const fetchAmenities = async () => {
     try {
-      const data = await getHotel();
-      setHotel(data);
-
-      // Parse amenities
-      let amenitiesArray = [""];
-
-      if (data.amenities) {
-        if (Array.isArray(data.amenities)) {
-          amenitiesArray = data.amenities;
-        } else {
-          try {
-            const parsed = JSON.parse(data.amenities);
-            amenitiesArray = Array.isArray(parsed) ? parsed : [parsed];
-          } catch {
-            amenitiesArray = [data.amenities];
-          }
-        }
-      }
-
-      setAmenities(amenitiesArray.length ? amenitiesArray : [""]);
+      const data = await getAmenities(token);
+      setAmenities(data || []);
     } catch (err) {
-      Swal.fire("Error", `Failed to fetch hotel details: ${err}`, "error");
+      Swal.fire("Error", "Failed to fetch amenities", "error");
     }
   };
 
   useEffect(() => {
-    fetchHotel();
+    fetchAmenities();
+    
   }, []);
 
-  const handleAmenityChange = (index, value) => {
-    const updated = [...amenities];
-    updated[index] = value;
-    setAmenities(updated);
-  };
-
-  const addAmenity = () => setAmenities([...amenities, ""]);
-
-  const removeAmenity = (index) => {
-    const updated = amenities.filter((_, i) => i !== index);
-    setAmenities(updated.length ? updated : [""]);
-  };
-
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const formData = new FormData();
-      formData.append("amenities", JSON.stringify(amenities.filter((a) => a.trim() !== "")));
+  e.preventDefault();
 
-      const token = localStorage.getItem("adminToken");
-      const res = await updateHotel(formData, token);
+  // During add, both name and icon are required
+  if (!name || (!icon && editIndex === null)) {
+    Swal.fire("Error", "Name and icon are required", "error");
+    return;
+  }
 
+  setLoading(true);
+
+  try {
+    const formData = new FormData();
+
+    if (editIndex !== null) {
+      // Update existing amenity
+      const amenityId = amenities[editIndex]._id;
+      formData.append("newName", name); // matches backend
+
+      if (icon) {
+        formData.append("icon", icon); // optional: only if a new file is selected
+      }
+
+      await updateAmenity(amenityId, formData, token);
+      Swal.fire("Success", "Amenity updated", "success");
+    } else {
+      // Add new amenity
+      formData.append("name", name);
+      formData.append("icon", icon);
+
+      await addAmenity(formData, token);
       Swal.fire("Success", "Amenity added", "success");
-      navigate("/admin/amenities");
-    } catch (err) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
-    } finally {
-      setLoading(false);
+    }
+
+    setName("");
+    setIcon(null);
+    setEditIndex(null);
+    fetchAmenities();
+  } catch (err) {
+    Swal.fire("Error", err.response?.data?.message || err.message, "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
+const handleEdit = (index) => {
+  setName(amenities[index].name);
+  setIcon(null); // icon is optional; leave null to keep existing
+  setEditIndex(index);
+};
+
+
+  const handleDelete = async (index) => {
+    const amenityId = amenities[index]._id;
+    const confirm = await Swal.fire({
+      title: "Are you sure?",
+      text: "This will delete the amenity permanently!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, delete it!",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await deleteAmenity(amenityId, token);
+        Swal.fire("Deleted!", "Amenity has been deleted.", "success");
+        fetchAmenities();
+      } catch (err) {
+        Swal.fire("Error", err.response?.data?.message || err.message, "error");
+      }
     }
   };
+  console.log(amenities);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-      <div className="p-6 max-w-3xl mx-auto bg-white rounded-2xl shadow-lg">
-        <h1 className="text-3xl font-bold mb-6 text-center">Edit Amenities</h1>
+      <div className="p-6 max-w-5xl mx-auto bg-white rounded-2xl shadow-lg">
+        <h1 className="text-3xl font-bold mb-6 text-center">Amenity Management</h1>
 
-        {!hotel ? (
-          <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8">
-            <p className="text-gray-600 mb-4">No hotel details available.</p>
-            <Button onClick={() => navigate("/admin/hotel-form/add")}>Add Hotel</Button>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="grid gap-4">
-            {amenities.map((amenity, index) => (
-              <div key={index} className="flex gap-2">
-                <input
-                  type="text"
-                  value={amenity}
-                  onChange={(e) => handleAmenityChange(index, e.target.value)}
-                  className="flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                  placeholder="Enter amenity"
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => removeAmenity(index)}
-                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                  disabled={amenities.length === 1}
-                >
-                  X
-                </button>
-              </div>
-            ))}
-            <button
-              type="button"
-              onClick={addAmenity}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              + Add Amenity
-            </button>
-
+        {/* Add/Edit Form */}
+        <form onSubmit={handleSubmit} className="mb-6 flex flex-col md:flex-row gap-4 md:items-center">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Amenity Name"
+              className="flex-1 px-3 py-2 border rounded-md"
+              required
+            />
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setIcon(e.target.files[0])}
+              className="px-2 py-2 border rounded-md"
+              {...(editIndex === null ? { required: true } : {})}
+            />
+            {icon && (
+              <img
+                src={URL.createObjectURL(icon)}
+                alt="preview"
+                className="h-12 w-12 object-cover rounded-md"
+              />
+            )}
             <button
               type="submit"
               disabled={loading}
-              className="mt-4 w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              {loading ? "Saving..." : "Update Amenities"}
+              {editIndex !== null ? (loading ? "Updating..." : "Update") : (loading ? "Adding..." : "Add")}
             </button>
-          </form>
-        )}
+            {editIndex !== null && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditIndex(null);
+                  setName("");
+                  setIcon(null);
+                }}
+                className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+            )}
+        </form>
+
+        {/* Amenities Table */}
+        <table className="w-full border-collapse table-auto">
+          <thead>
+            <tr className="bg-gray-200 text-gray-700">
+              <th className="px-4 py-3 text-left font-semibold text-sm">#</th>
+              <th className="px-4 py-3 text-left font-semibold text-sm">Icon</th>
+              <th className="px-4 py-3 text-left font-semibold text-sm">Name</th>
+              <th className="px-4 py-3 text-left font-semibold text-sm">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {amenities.map((amenity, index) => (
+              <tr key={amenity._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
+                <td className="px-4 py-3 text-gray-600 text-sm">{index + 1}</td>
+                <td className="px-4 py-3 text-gray-600 text-sm">
+                  <img
+                    src={`${API_URL}uploads/amenities/${amenity.icon}`}
+                    alt={amenity.name}
+                    className="h-10 w-10 object-cover mx-auto rounded-md"
+                  />
+                </td>
+                <td className="px-4 py-3 text-gray-600 text-sm">{amenity.name}</td>
+                <td className="px-4 py-3 flex gap-2 items-center">
+                  <button
+                    onClick={() => handleEdit(index)}
+                    className="px-3 py-1 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(index)}
+                    className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {amenities.length === 0 && (
+              <tr>
+                <td colSpan="4" className="border px-4 py-2 text-center text-gray-500">
+                  No amenities found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
     </div>
   );

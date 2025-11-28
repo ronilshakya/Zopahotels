@@ -118,3 +118,85 @@ exports.deleteHotel = async (req, res) => {
         res.status(500).json({ message: "Server error", error: error.message });
     }
 };
+
+exports.addAmenity = async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne();
+    if (!hotel) return res.status(404).json({ message: "Hotel not found" });
+
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ message: "Amenity name is required" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ message: "Amenity icon is required" });
+    }
+
+    const newAmenity = {
+      name,
+      icon: req.file.filename
+    };
+
+    hotel.amenities.push(newAmenity);
+    await hotel.save();
+
+    res.json({ message: "Amenity added", amenity: newAmenity });
+
+  } catch (error) {
+    console.error("Amenity add error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.getAmenities = async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne();
+    if (!hotel) return res.status(404).json({ message: "Hotel not found" });
+
+    res.json(hotel.amenities || []);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.updateAmenity = async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne();
+    if (!hotel) return res.status(404).json({ message: "Hotel not found" });
+
+    const { id } = req.params; // current name
+    const { newName } = req.body;
+
+    const amenity = hotel.amenities.find(a => a.id === id);
+    if (!amenity) return res.status(404).json({ message: "Amenity not found" });
+
+    if (newName) amenity.name = newName;
+    if (req.file) amenity.icon = req.file.filename;
+
+    await hotel.save();
+    res.json({ message: "Amenity updated", amenity });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.deleteAmenity = async (req, res) => {
+  try {
+    const hotel = await Hotel.findOne();
+    if (!hotel) return res.status(404).json({ message: "Hotel not found" });
+
+    const { id } = req.params;
+
+    hotel.amenities = hotel.amenities.filter(a => a.id !== id);
+    await hotel.save();
+
+    res.json({ message: "Amenity deleted" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

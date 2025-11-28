@@ -39,8 +39,12 @@ const RoomSchema = new mongoose.Schema({
     images:[{
         type: String
     }],
-    amenities:[{
-        type: String
-    }]
+    amenities: [
+    {
+        _id: mongoose.Schema.Types.ObjectId,
+        name: String,
+        icon: String
+    }
+    ]
 },{timestamps:true});
 module.exports = mongoose.model("Room",RoomSchema);
