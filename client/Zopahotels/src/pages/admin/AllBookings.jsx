@@ -150,9 +150,9 @@ const AllBookings = () => {
                 {bookings.map((booking) => (
                   <tr key={booking._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
                     <td className="px-4 py-3 text-gray-600 text-sm">{booking.user?.name}</td>
-                    <td className="px-4 py-3 text-gray-600 text-sm">
+                    <td className="px-4 py-3 text-gray-600 text-sm ">
                       {booking.rooms.map((r, i) => (
-                        <div key={i}>{r.roomId?.type} - {r.roomNumber}</div>
+                        <div key={i} className='w-[200px]'>{r.roomId?.type} - {r.roomNumber}</div>
                       ))}
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkIn).toLocaleDateString()}</td>
