@@ -142,7 +142,7 @@ const AdminAddBooking = () => {
     setQuery(`${user.name} (${user.email})`);
     setShowSuggestions(false);
   };
-
+  
   return (
     <div className="min-h-screen bg-gray-100 py-10">
       <div className="max-w-4xl mx-auto p-6 bg-white rounded-xl shadow-lg mt-8 relative">
@@ -231,24 +231,58 @@ const AdminAddBooking = () => {
                 </select>
               </div>
 
-              {/* Number of Rooms Dropdown */}
+             {/* Number of Rooms Dropdown */}
+{/* Number of Rooms Dropdown */}
+{/* {r.roomId && rooms.find(room => room._id === r.roomId)?.status !== "maintenance" && (
+  <div>
+    <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
+    <select
+      value={r.numRooms || ""}
+      onChange={(e) => handleNumRoomsChange(index, e)}
+      disabled={!availableRoomCounts[r.roomId] || loading}
+      className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+    >
+      <option value="">Select Number</option>
+      {Array.from({ length: availableRoomCounts[r.roomId] || 0 }, (_, i) => i + 1).map(
+        (n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        )
+      )}
+    </select>
+  </div>
+)} */}
               <div>
-                <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
-                <select
-                  value={r.numRooms || ""}
-                  onChange={(e) => handleNumRoomsChange(index, e)}
-                  disabled={!r.roomId || loading || !availableRoomCounts[r.roomId]}
-                  className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                >
-                  <option value="">Select Number</option>
-                  {r.roomId &&
-                    Array.from({ length: availableRoomCounts[r.roomId] || 0 }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n}>
-                        {n}
-                      </option>
-                    ))}
-                </select>
-              </div>
+  <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
+  <select
+    value={r.numRooms || ""}
+    onChange={(e) => handleNumRoomsChange(index, e)}
+    disabled={!r.roomId || loading || !availableRoomCounts[r.roomId]}
+    className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+  >
+    <option value="">Select Number</option>
+    {r.roomId &&
+      (() => {
+        const roomType = rooms.find((room) => room._id === r.roomId);
+        if (!roomType) return null;
+
+        // count rooms not under maintenance
+        const maintenanceCount = roomType.rooms.filter(r => r.status === "maintenance").length;
+
+        // subtract maintenance rooms from availableRoomCounts
+        const maxSelectable = Math.max(availableRoomCounts[r.roomId] - maintenanceCount, 0);
+
+        return Array.from({ length: maxSelectable }, (_, i) => i + 1).map((n) => (
+          <option key={n} value={n}>
+            {n}
+          </option>
+        ));
+      })()}
+  </select>
+</div>
+
+
 
               {bookingData.rooms.length > 1 && (
                 <button

@@ -46,8 +46,11 @@ const EditRoomPage = () => {
           maxOccupancy: data.maxOccupancy || 1,
           amenities: Array.isArray(data.amenities) ? data.amenities : [],
           rooms: Array.isArray(data.rooms) && data.rooms.length > 0
-            ? data.rooms.map(r => ({ roomNumber: r.roomNumber || "" }))
-            : [{ roomNumber: "" }],
+          ? data.rooms.map(r => ({
+              roomNumber: r.roomNumber || "",
+              status: r.status || "available"  // <-- preload status
+            }))
+          : [{ roomNumber: "", status: "available" }],
         });
         setExistingImages(Array.isArray(data.images) ? data.images : []);
       } catch (error) {
@@ -236,32 +239,61 @@ const EditRoomPage = () => {
           </div>
         </div>
 
+{/* Room Numbers */}
+<div className="mt-6">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Room Numbers</label>
+  {form.rooms.map((room, index) => (
+    <div key={index} className="flex gap-2 mb-2 items-center">
+      {/* Room Number Input */}
+      <input
+        type="text"
+        value={room.roomNumber}
+        onChange={(e) => {
+          const updated = [...form.rooms];
+          updated[index].roomNumber = e.target.value;
+          setForm({ ...form, rooms: updated });
+        }}
+        className="w-1/2 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+        placeholder="Room Number"
+        required
+      />
 
+      {/* Status Dropdown */}
+      <select
+        value={room.status || 'available'}
+        onChange={(e) => {
+          const updated = [...form.rooms];
+          updated[index].status = e.target.value;
+          setForm({ ...form, rooms: updated });
+        }}
+        className="w-1/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+      >
+        <option value="available">Available</option>
+        <option value="maintenance">Maintenance</option>
+      </select>
 
-          {/* Room Numbers */}
-          <div className="mt-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Room Numbers</label>
-            {form.rooms.map((room, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <input type="text" value={room.roomNumber}
-                  onChange={(e) => {
-                    const updated = [...form.rooms];
-                    updated[index].roomNumber = e.target.value;
-                    setForm({ ...form, rooms: updated });
-                  }}
-                  className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
-                  placeholder="Room Number" required />
-                <button type="button"
-                  onClick={() => setForm({ ...form, rooms: form.rooms.filter((_, i) => i !== index) })}
-                  className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                  disabled={form.rooms.length === 1}>X</button>
-              </div>
-            ))}
-            <button type="button" onClick={() => setForm({ ...form, rooms: [...form.rooms, { roomNumber: "" }] })}
-              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
-              + Add Room Number
-            </button>
-          </div>
+      {/* Remove Room Button */}
+      <button
+        type="button"
+        onClick={() => setForm({ ...form, rooms: form.rooms.filter((_, i) => i !== index) })}
+        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+        disabled={form.rooms.length === 1}
+      >
+        X
+      </button>
+    </div>
+  ))}
+
+  {/* Add New Room Button */}
+  <button
+    type="button"
+    onClick={() => setForm({ ...form, rooms: [...form.rooms, { roomNumber: "", status: "available" }] })}
+    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+  >
+    + Add Room Number
+  </button>
+</div>
+
 
           {/* Submit */}
           <button type="submit" disabled={loading}

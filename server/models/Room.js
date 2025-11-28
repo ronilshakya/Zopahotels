@@ -28,6 +28,11 @@ const RoomSchema = new mongoose.Schema({
             roomNumber:{
                 type:String,
                 required:true
+            },
+            status: { 
+                type: String, 
+                enum: ['available', 'maintenance'], 
+                default: 'available' 
             }
         }
     ],

@@ -78,16 +78,22 @@ const RoomStatus = () => {
           <div key={room._id} className="mb-6">
             <h2 className="text-xl font-semibold mb-2">{room.type}</h2>
             <div className="flex flex-wrap gap-2">
-              {room.rooms.map((r) => (
-                <span
-                  key={r.roomNumber}
-                  className={`px-3 py-1 rounded-md text-white ${
-                    isOccupied(r.roomNumber) ? 'bg-red-600' : 'bg-green-600'
-                  }`}
-                >
-                  {r.roomNumber}
-                </span>
-              ))}
+              {room.rooms.map((r) => {
+                let bgColor = 'bg-green-600'; // default available
+
+                if (r.status === 'maintenance') bgColor = 'bg-yellow-500';
+                else if (isOccupied(r.roomNumber)) bgColor = 'bg-red-600';
+
+                return (
+                  <span
+                    key={r.roomNumber}
+                    className={`px-3 py-1 rounded-md text-white ${bgColor}`}
+                  >
+                    {r.roomNumber}
+                  </span>
+                );
+              })}
+
             </div>
           </div>
         ))}

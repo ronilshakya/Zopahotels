@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { createRoom } from "../../api/roomApi";
 import Swal from 'sweetalert2';
 import { useHotel } from "../../context/HotelContext";
+import { API_URL } from "../../config";
 
 const AddRoom = () => {
   const [loading, setLoading] = useState(false);
@@ -186,22 +187,35 @@ const AddRoom = () => {
 
           {/* Amenities */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {hotelAmenities.map((amenity) => (
-                <label key={amenity} className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    value={amenity}
-                    checked={form.amenities.includes(amenity)}
-                    onChange={() => handleAmenityChange(amenity)}
-                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                  />
-                  {amenity}
-                </label>
-              ))}
-            </div>
-          </div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Amenities</label>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                      {hotelAmenities.map((amenity) => (
+                        <label key={amenity._id} className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            value={amenity._id}
+                            checked={form.amenities.some(a => a._id === amenity._id)}
+                            onChange={() => {
+                              if (form.amenities.some(a => a._id === amenity._id)) {
+                                setForm({
+                                  ...form,
+                                  amenities: form.amenities.filter(a => a._id !== amenity._id)
+                                });
+                              } else {
+                                setForm({
+                                  ...form,
+                                  amenities: [...form.amenities, amenity]
+                                });
+                              }
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                          <img src={`${API_URL}uploads/amenities/${amenity.icon}`} alt={amenity.name} className="w-5 h-5 object-cover rounded" />
+                          {amenity.name}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
 
           {/* Room Numbers */}
           <div className="mt-6">

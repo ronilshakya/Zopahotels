@@ -39,30 +39,49 @@ const SearchRoomsPage = () => {
       const result = await searchAvailableRooms(filters);
 
       const roomsWithImages = await Promise.all(
-        result.availableRooms.map(async (room) => {
-          try {
-            const roomDetails = await getRoomById(room.roomId);
+  result.availableRooms.map(async (room) => {
+    try {
+      const roomDetails = await getRoomById(room.roomId);
 
-            // Fetch available room numbers for this room
-            const roomNumbersData = await getAvailableRoomNumbersByDate({
-              roomId: room.roomId,
-              checkIn: filters.checkIn,
-              checkOut: filters.checkOut,
-            });
+      // Filter out room numbers that are under maintenance
+      const availableRoomNumbers = roomDetails.rooms
+        .filter(r => r.status !== 'maintenance')
+        .map(r => r.roomNumber);
 
-            setAvailableRoomCounts((prev) => ({
-              ...prev,
-              [room.roomId]: roomNumbersData.availableRoomNumbers.length,
-            }));
+      // Skip rooms if no available numbers left
+      if (availableRoomNumbers.length === 0) return null;
 
-            return { ...room, image: roomDetails.images?.[0] || null };
-          } catch {
-            return { ...room, image: null };
-          }
-        })
+      // Fetch available room numbers for this room (API)
+      const roomNumbersData = await getAvailableRoomNumbersByDate({
+        roomId: room.roomId,
+        checkIn: filters.checkIn,
+        checkOut: filters.checkOut,
+      });
+
+      // Only count numbers that are available AND not under maintenance
+      const finalAvailableRoomNumbers = availableRoomNumbers.filter(num =>
+        roomNumbersData.availableRoomNumbers.includes(num)
       );
 
-      setAvailableRooms(roomsWithImages);
+      setAvailableRoomCounts((prev) => ({
+        ...prev,
+        [room.roomId]: finalAvailableRoomNumbers.length,
+      }));
+
+      return { 
+        ...room, 
+        image: roomDetails.images?.[0] || null,
+        availableRoomNumbers: finalAvailableRoomNumbers,
+      };
+    } catch {
+      return null;
+    }
+  })
+);
+
+// Remove rooms that were null (all numbers under maintenance)
+setAvailableRooms(roomsWithImages.filter(r => r !== null));
+
     } catch (error) {
       console.error(error);
     } finally {
@@ -242,27 +261,26 @@ const SearchRoomsPage = () => {
                   <p className="text-gray-600">{room.nights} night(s)</p>
 
                   {/* Number of Rooms Dropdown per room */}
-                  {availableRoomCounts[room.roomId] > 0 && (
-                    <div className="mt-4">
-                      <select
-                        value={numRooms[room.roomId] || ""}
-                        onChange={(e) =>{
-                          const value = e.target.value === "" ? undefined : Number(e.target.value);
-                          setNumRooms((prev) => ({ ...prev, [room.roomId]: value }));
-                        }}
-                        className="border border-gray-300 rounded px-3 py-2"
-                      >
-                        <option value="">
-                          Number of Rooms
-                        </option>
-                        {Array.from({ length: availableRoomCounts[room.roomId] }, (_, i) => i + 1).map((n) => (
-                          <option key={n} value={n}>
-                            {n}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
+                 {room.availableRoomNumbers.length > 0 && (
+  <div className="mt-4">
+    <select
+      value={numRooms[room.roomId] || ""}
+      onChange={(e) => {
+        const value = e.target.value === "" ? undefined : Number(e.target.value);
+        setNumRooms((prev) => ({ ...prev, [room.roomId]: value }));
+      }}
+      className="border border-gray-300 rounded px-3 py-2"
+    >
+      <option value="">Number of Rooms</option>
+      {room.availableRoomNumbers.map((num, i) => (
+        <option key={i} value={i + 1}>
+          {i + 1}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+
 
 
                   <div className="flex justify-between items-center mt-4">
