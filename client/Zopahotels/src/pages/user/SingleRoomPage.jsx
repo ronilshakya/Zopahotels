@@ -55,7 +55,7 @@ const SingleRoomPage = () => {
               {room.images.map((img, idx) => (
                 <SwiperSlide key={idx}>
                   <img
-                    src={`${API_URL}uploads/${img}`}
+                    src={`${API_URL}uploads/rooms/${img}`}
                     alt={`Room ${idx + 1}`}
                     className="w-full h-full object-cover"
                   />

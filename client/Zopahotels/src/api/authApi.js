@@ -191,3 +191,20 @@ export const uploadProfileImage = async (file, token) => {
     throw error;
   }
 }
+
+export const uploadProfileImageAdmin = async (file, id, token) => {
+  try {
+    const formData = new FormData();
+    formData.append("profileImage", file);
+    const res = await axios.put(`${API_URL_EXTENDED}/upload-profile-image-admin/${id}`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Upload Profile Image Error:", error.response?.data || error.message);
+    throw error;
+  }
+}

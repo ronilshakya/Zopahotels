@@ -1,5 +1,7 @@
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
+const fs = require("fs");
+const path = require("path");
 
 exports.createRoom = async (req, res) => {
   try {
@@ -166,9 +168,23 @@ exports.deleteRoom = async (req, res) => {
     if (!room) {
       return res.status(404).json({ message: "Room not found" });
     }
-    res.json({ message: "Room deleted successfully" });
+
+    // Delete images from server
+    if (room.images && room.images.length > 0) {
+      room.images.forEach((img) => {
+        const filePath = path.join(__dirname, "../uploads/rooms/", img);
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+          if (!err) {
+            fs.unlink(filePath, (err) => {
+              if (err) console.error("Error deleting image:", img, err);
+            });
+          }
+        });
+      });
+    }
+
+    res.json({ message: "Room and its images deleted successfully" });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
-

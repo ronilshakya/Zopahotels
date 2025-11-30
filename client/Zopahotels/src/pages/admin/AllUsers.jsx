@@ -111,7 +111,19 @@ const AllUsers = () => {
               <tbody>
                 {allUsers.map((user) => (
                   <tr key={user._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
-                    <td className="px-4 py-3 text-gray-600 text-sm"><img src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} className='w-10' alt="prof" /></td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">
+                      <a
+                        href={`${API_URL}uploads/profile-pictures/${user.profileImage}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img 
+                          src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
+                          className='w-10 h-10 object-cover rounded-full'
+                           alt="prof" 
+                        />
+                        </a>
+                    </td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.name}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.email}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.phone}</td>

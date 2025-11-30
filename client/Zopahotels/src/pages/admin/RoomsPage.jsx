@@ -106,7 +106,7 @@ const handleDeleteRoom = async (id) => {
                 />
               )}
               <img
-                src={`${API_URL}uploads/${room?.images[0]}`}
+                src={`${API_URL}uploads/rooms/${room?.images[0]}`}
                 alt="Room"
                 className={`w-full h-48 object-cover ${imgLoaded ? "block" : "hidden"}`}
                 onLoad={() => setImgLoaded(true)}

@@ -189,7 +189,7 @@ const EditRoomPage = () => {
             <div className="flex flex-wrap gap-3">
               {existingImages.map((img, idx) => (
                 <div key={idx} className="relative">
-                  <img src={`${API_URL}uploads/${img}`} alt={`Room ${idx}`} className="w-24 h-24 object-cover rounded-md shadow-sm" />
+                  <img src={`${API_URL}uploads/rooms/${img}`} alt={`Room ${idx}`} className="w-24 h-24 object-cover rounded-md shadow-sm" />
                   <button type="button" onClick={() => removeExistingImage(idx)}
                     className="absolute -top-1 -right-1 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700">
                     <FiX />

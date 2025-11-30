@@ -57,9 +57,6 @@ const MyBookingsPage = () => {
       fetchRooms();
     }, []);
 
-    console.log(rooms);
-    console.log(bookings);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -142,10 +139,10 @@ const MyBookingsPage = () => {
 
         <div className="py-4 text-gray-700">
           <strong>Rooms:</strong>
-          <ul className=" list-inside mt-1">
+          <ul className=" mt-1">
             {booking.rooms.map((r) => (
-              <li key={r._id}>
-                <p>{r.roomId.type} - Room {r.roomNumber}</p>
+              <li key={r._id} className="mt-4">
+                <p>{r.roomId?.type} - Room ({r.roomNumber})</p>
                 {!imgLoaded && (
                   <img
                     src={preloader}
@@ -154,9 +151,9 @@ const MyBookingsPage = () => {
                   />
                 )}
                 <img
-                  src={`${API_URL}uploads/${rooms.find(room => room._id === r.roomId._id)?.images?.[0] || "default.png"}`}
+                  src={`${API_URL}uploads/rooms/${rooms.find(room => room?._id === r.roomId?._id)?.images?.[0] || "default.png"}`}
                   alt=""
-                  className={`rounded-xl h-32 w-full object-cover mt-4 ${imgLoaded ? "block" : "hidden"}`}
+                  className={`rounded-xl h-32 md:h-44 lg:h-56 w-full object-cover mt-4 ${imgLoaded ? "block" : "hidden"}`}
                   onLoad={() => setImgLoaded(true)}
                 />
               </li>
@@ -177,7 +174,7 @@ const MyBookingsPage = () => {
         {upcoming.length > 0 && (
           <>
             <h2 className="text-2xl font-semibold mb-4">Upcoming Bookings</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1  gap-3">
               {upcoming.map(renderBookingCard)}
             </div>
           </>
@@ -186,7 +183,7 @@ const MyBookingsPage = () => {
         {past.length > 0 && (
           <>
             <h2 className="text-2xl font-semibold mb-4">Past Bookings</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               {past.map(renderBookingCard)}
             </div>
           </>

@@ -242,7 +242,7 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
 
                 {/* REAL IMAGE */}
                 <img
-                  src={room.image ? `${API_URL}uploads/${room.image}` : preloader}
+                  src={room.image ? `${API_URL}uploads/rooms/${room.image}` : preloader}
                   alt={room.type}
                   className={`w-48 h-full object-cover rounded-lg m-4 ${imgLoaded ? "block" : "hidden"}`}
                   onLoad={() => setImgLoaded(true)}

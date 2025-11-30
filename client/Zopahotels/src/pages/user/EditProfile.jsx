@@ -201,7 +201,7 @@ const EditProfile = () => {
 
           <div>
             <label className="block text-gray-700 font-medium mb-1">Profile Picture</label>
-            <input type="file" accept="image/png, image/jpeg" onChange={handleUpload} />
+            <input type="file" accept="image/png, image/jpeg" className="w-full px-3 py-2 border border-gray-300" onChange={handleUpload} />
           </div>
 
           <button

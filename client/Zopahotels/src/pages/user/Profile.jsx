@@ -59,7 +59,7 @@ const Profile = () => {
             <img 
               src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
               alt="prof" 
-              className="w-32"
+              className="w-32 mx-auto h-32 rounded-full object-cover mb-4"
             />
           </div>
           <div>

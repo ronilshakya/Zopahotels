@@ -68,7 +68,7 @@ const Rooms = () => {
               onClick={() => navigate(`/room/${room._id}`)}
               src={
                 room.images && room.images.length > 0
-                  ? `${API_URL}uploads/${room.images[0]}`
+                  ? `${API_URL}uploads/rooms/${room.images[0]}`
                   : "https://via.placeholder.com/400x250"
               }
               alt={room.type}

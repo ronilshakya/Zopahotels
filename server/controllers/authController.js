@@ -110,13 +110,13 @@ exports.login = async (req,res) =>{
     try {
         const {email,password} = req.body;
         const user = await User.findOne({email});
+        if(!user){
+            return res.status(400).json({message: "User not found"});
+        }
         if (user.status === "inactive") {
             return res.status(403).json({ message: "Your account is suspended. Contact support." });
         }
 
-        if(!user){
-            return res.status(400).json({message: "User not found"});
-        }
         if(!user.isVerified){
             return res.status(403).json({message: "Please verify email first"});
         }
@@ -461,6 +461,35 @@ exports.searchUsers = async (req, res) => {
 exports.uploadProfileImage = async (req, res) => {
   try {
     const userId = req.user.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profileImage: req.file.filename },
+      { new: true } // return updated document
+    );
+
+    res.status(200).json({
+      message: "Profile picture updated!",
+      profileImage: user.profileImage // send the new filename
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+exports.uploadProfileImageAdmin = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
+    }
 
     const user = await User.findByIdAndUpdate(
       userId,

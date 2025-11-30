@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { getUserById, updateUser } from '../../api/authApi';
+import { getUserById, updateUser, uploadProfileImageAdmin } from '../../api/authApi';
 import Swal from 'sweetalert2';
 import preloader from '../../assets/preloader.gif'
+import { API_URL } from '../../config';
 
 const EditUser = () => {
   const { id } = useParams();
@@ -58,6 +59,27 @@ const EditUser = () => {
       [id]: type === 'checkbox' ? (checked ? 'active' : 'inactive') : value
     }));
   };
+
+  const handleUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const allowedTypes = ["image/jpeg", "image/png"];
+  if (!allowedTypes.includes(file.type)) {
+    Swal.fire({ title: "Only JPG and PNG are allowed", icon: "warning" });
+    return;
+  }
+
+  try {
+    const res = await uploadProfileImageAdmin(file, id, token);
+    setFormData(prev => ({ ...prev, profileImage: res.profileImage }));
+    Swal.fire({ title: "Profile picture updated!", icon: "success" });
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    Swal.fire({ title: "Failed to update profile picture.", icon: "error" });
+  }
+};
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -236,6 +258,26 @@ const EditUser = () => {
               </span>
             </div>
           </div>
+          <div className="mb-6">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Profile Picture</label>
+  
+  {/* Display current profile image if available */}
+  {formData.profileImage && (
+    <img
+      src={`${API_URL}uploads/profile-pictures/${formData.profileImage}`}
+      alt="Profile"
+      className="w-24 h-24 rounded-full object-cover mb-2"
+    />
+  )}
+  
+  <input
+    type="file"
+    accept="image/png, image/jpeg"
+    onChange={handleUpload}
+    className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+  />
+</div>
+
           <div className="flex gap-4">
             <button
               type="submit"
