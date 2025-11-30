@@ -19,6 +19,12 @@ exports.createRoom = async (req, res) => {
       return res.status(400).json({ message: "Duplicated room numbers in request" });
     }
 
+     // Check if any of the room numbers already exist in other room types
+    const conflict = await Room.findOne({ "rooms.roomNumber": { $in: roomNumbers } });
+    if (conflict) {
+      return res.status(400).json({ message: `Room number(s) already exist in another room type` });
+    }
+
     const newRoom = new Room({
       type,
       description,
@@ -79,17 +85,34 @@ exports.updateRoom = async (req, res) => {
       }
     }
 
-    // Parse selected amenity IDs from frontend
+    // Check for duplicates within the same room type
+    if (req.body.rooms && req.body.rooms.length > 0) {
+      const roomNumbers = req.body.rooms.map(r => r.roomNumber);
+      const uniqueRoomNumbers = new Set(roomNumbers);
+      if (uniqueRoomNumbers.size !== roomNumbers.length) {
+        return res.status(400).json({ message: "Duplicate room numbers within the same room type" });
+      }
+
+      // Check for duplicates across all other room types
+      const duplicate = await Room.findOne({
+        _id: { $ne: room._id }, // exclude current room type
+        "rooms.roomNumber": { $in: roomNumbers }
+      });
+      if (duplicate) {
+        return res.status(400).json({ message: "One or more room numbers already exist in another room type" });
+      }
+    }
+
+    // Parse selected amenity IDs
     let selectedAmenityIds = [];
     if (req.body.amenities) {
       try {
-        selectedAmenityIds = JSON.parse(req.body.amenities); // array of _id strings
+        selectedAmenityIds = JSON.parse(req.body.amenities);
       } catch {
         return res.status(400).json({ message: "Invalid amenities format" });
       }
     }
 
-    // Map selected IDs to full amenity objects from hotel
     const selectedAmenities = hotel.amenities.filter(a =>
       selectedAmenityIds.includes(a._id.toString())
     );
@@ -109,7 +132,6 @@ exports.updateRoom = async (req, res) => {
       if (req.body[key] !== undefined) room[key] = req.body[key];
     });
 
-    // Set amenities
     room.amenities = selectedAmenities;
 
     // Handle images
@@ -135,6 +157,7 @@ exports.updateRoom = async (req, res) => {
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
+
 
 
 exports.deleteRoom = async (req, res) => {

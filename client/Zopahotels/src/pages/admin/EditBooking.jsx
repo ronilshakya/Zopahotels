@@ -91,6 +91,7 @@ const EditBooking = () => {
               bookingId: id,
             }, token);
             newAvailable[room.roomId] = res.availableRoomNumbers || [];
+            console.log(res)
           }
         }
         setAvailableRoomNumbers(newAvailable);
@@ -156,7 +157,6 @@ const EditBooking = () => {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-2xl w-full bg-white rounded-lg shadow-lg p-6">
@@ -198,7 +198,8 @@ const EditBooking = () => {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
             {form.selectedRooms.map((room, index) => {
-              const options = availableRoomNumbers?.[room.roomId] || [];
+              const rawOptions = availableRoomNumbers?.[room.roomId] || [];
+              const options = rawOptions.filter(r => r.status === "available");
               const selectedNumbers = form.selectedRooms.filter(r => r.roomId === room.roomId && r.roomNumber && r !== room).map(r => r.roomNumber);
               const filteredOptions = options.filter(num => !selectedNumbers.includes(num));
 
@@ -212,7 +213,7 @@ const EditBooking = () => {
                   >
                     <option value="">Select room number</option>
                     {filteredOptions.length > 0 ? (
-                      filteredOptions.map(num => <option key={num} value={num}>{num}</option>)
+                      filteredOptions.map(num => <option key={num.number} value={num.number}>{num.number}</option>)
                     ) : (
                       <option disabled>No rooms available</option>
                     )}

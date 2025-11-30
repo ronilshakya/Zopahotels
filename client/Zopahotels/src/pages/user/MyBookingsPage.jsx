@@ -3,8 +3,13 @@ import { getMyBookings } from "../../api/bookingApi";
 import { useNavigate } from "react-router-dom";
 import preloader from '../../assets/preloader.gif'
 import { useHotel } from "../../context/HotelContext";
+import { FaCircleCheck } from "react-icons/fa6";
+import { getAllRooms } from "../../api/roomApi";
+import { API_URL } from "../../config";
+import { IoCloseCircle } from "react-icons/io5";
 
 const MyBookingsPage = () => {
+  const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const {hotel} = useHotel();
@@ -35,6 +40,25 @@ const MyBookingsPage = () => {
     fetchBookings();
   }, [navigate]);
 
+    useEffect(() => {
+      const fetchRooms = async () => {
+        try {
+          // const token = localStorage.getItem("authToken");
+          const data = await getAllRooms();
+          setRooms(data);
+        } catch (error) {
+          console.error("Failed to fetch rooms:", error.message);
+        } finally {
+          setLoading(false);
+        }
+      };
+  
+      fetchRooms();
+    }, []);
+
+    console.log(rooms);
+    console.log(bookings);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -63,40 +87,69 @@ const MyBookingsPage = () => {
     return (
       <div
         key={booking._id}
-        className="bg-white shadow-md rounded-lg p-4 border border-gray-200 mb-4 sm:mb-6"
+        className="bg-white shadow-md rounded-xl px-4 border border-gray-200 mb-4 sm:mb-6"
       >
-        <div className="flex justify-between items-center mb-2">
-          <h2 className="text-lg font-semibold text-gray-800">
-            Booking id: {booking.bookingId}
-          </h2>
-          <span
-            className={`px-2 py-1 text-sm rounded-full font-medium ${
-              booking.status === "confirmed"
-                ? "bg-green-100 text-green-800"
-                : booking.status === "pending"
-                ? "bg-yellow-100 text-yellow-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {booking.status}
-          </span>
+        <div className="py-4 flex justify-between items-center">
+          <div className="">
+            <h1
+              className={`text-xl rounded-full font-medium`}
+            >
+              Booking {booking.status}
+            </h1>
+            <h2 className="text-md text-gray-500">
+              Booking id: <b>{booking.bookingId}</b>
+            </h2>
+          </div>
+          {booking.status === "cancelled" ? (
+            <IoCloseCircle size={35} className="text-red-500" />
+          ):(
+            <FaCircleCheck size={25} className={`${
+                booking.status === "confirmed"
+                  ? " text-green-800"
+                  : booking.status === "pending"
+                  && " text-yellow-500"
+              }`} />
+          )}            
+
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-gray-700 text-sm">
-          <p><strong>Check-in:</strong> {new Date(booking.checkIn).toLocaleDateString()}</p>
-          <p><strong>Check-out:</strong> {new Date(booking.checkOut).toLocaleDateString()}</p>
-          <p><strong>Nights:</strong> {nights}</p>
-          <p><strong>Adults:</strong> {booking.adults}</p>
-          <p><strong>Children:</strong> {booking.children}</p>
-          <p><strong>Total Price:</strong> {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {booking.totalPrice}</p>
+        <hr className="h-px bg-gray-200 border-0"></hr>
+
+        <div className="grid grid-cols-2 text-gray-700 text-sm py-4">
+          <p><strong>Check-in:</strong><br /> {new Date(booking.checkIn).toLocaleDateString()}</p>
+          <p><strong>Check-out:</strong><br /> {new Date(booking.checkOut).toLocaleDateString()}</p>          
         </div>
 
-        <div className="mt-2 text-gray-700">
+        <hr className="h-px bg-gray-200 border-0"></hr>
+
+        <p className="text-gray-700 text-sm py-4"><strong>Nights:</strong> {nights}</p>
+
+        <hr className="h-px bg-gray-200 border-0"></hr>
+
+        <p className="text-gray-700 text-sm py-4"><strong>Adults:</strong> {booking.adults}</p>
+
+        <hr className="h-px bg-gray-200 border-0"></hr>
+
+        <p className="text-gray-700 text-sm py-4"><strong>Children:</strong> {booking.children}</p>
+
+        <hr className="h-px bg-gray-200 border-0"></hr>
+
+        <p className="text-gray-700 text-sm py-4"><strong>Total Price:</strong> {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {booking.totalPrice}</p>
+        
+        <hr className="h-px bg-gray-200 border-0"></hr>
+        
+
+        <div className="py-4 text-gray-700">
           <strong>Rooms:</strong>
-          <ul className="list-disc list-inside mt-1">
+          <ul className=" list-inside mt-1">
             {booking.rooms.map((r) => (
               <li key={r._id}>
-                {r.roomId.type} - Room {r.roomNumber}
+                <p>{r.roomId.type} - Room {r.roomNumber}</p>
+                <img
+                  src={`${API_URL}uploads/${rooms.find(room => room._id === r.roomId._id)?.images?.[0] || "default.png"}`}
+                  alt=""
+                  className="rounded-xl h-32 w-full object-cover mt-4"
+                />
               </li>
             ))}
           </ul>
@@ -115,7 +168,7 @@ const MyBookingsPage = () => {
         {upcoming.length > 0 && (
           <>
             <h2 className="text-2xl font-semibold mb-4">Upcoming Bookings</h2>
-            <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {upcoming.map(renderBookingCard)}
             </div>
           </>
@@ -124,7 +177,7 @@ const MyBookingsPage = () => {
         {past.length > 0 && (
           <>
             <h2 className="text-2xl font-semibold mb-4">Past Bookings</h2>
-            <div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {past.map(renderBookingCard)}
             </div>
           </>

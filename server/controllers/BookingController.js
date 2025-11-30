@@ -312,38 +312,45 @@ exports.getAvailableRoomNumbers = async (req, res) => {
     const checkOutDate = new Date(checkOut);
 
     if (checkOutDate <= checkInDate) {
-      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+      return res.status(400).json({ message: "Check-out must be after check-in" });
     }
 
-    // Fetch the room document
     const roomDoc = await Room.findById(roomId);
-    if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
+    if (!roomDoc) return res.status(404).json({ message: "Room not found" });
 
-    // Get all room numbers for this room type
-    const allRoomNumbers = roomDoc.rooms.map(r => r.roomNumber);
+    // Prepare rooms with actual DB statuses (NOT booked)
+    const allRooms = roomDoc.rooms.map(r => ({
+      number: r.roomNumber,
+      status: r.status || "available"
+    }));
 
-    // Find room numbers already booked for this room type in the given date range
-    const bookedNumbers = await Booking.find({
-      _id: { $ne: bookingId || null }, // exclude current booking if updating
+    // Find overlapping booked rooms
+    const overlappingBookedNumbers = await Booking.find({
+      _id: { $ne: bookingId || null },
       "rooms.roomId": roomId,
-      "rooms.roomNumber": { $in: allRoomNumbers },
+      "rooms.roomNumber": { $in: allRooms.map(r => r.number) },
       status: { $in: ["pending", "confirmed"] },
       $or: [
-        { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
-        { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
-        { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } },
-      ],
+        { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } } // THIS is correct overlap logic
+      ]
     }).distinct("rooms.roomNumber");
 
-    // Available numbers = all - booked
-    const availableRoomNumbers = allRoomNumbers.filter(num => !bookedNumbers.includes(num));
+    // Remove entries that:
+    // 1) are room.status = "not_available"
+    // 2) are in overlapping bookings
+    const availableRooms = allRooms.filter(r =>
+      r.status !== "not_available" &&
+      !overlappingBookedNumbers.includes(r.number)
+    );
 
-    res.json({ availableRoomNumbers });
+    return res.json({ availableRoomNumbers: availableRooms });
+
   } catch (error) {
-    console.error("Error in getAvailableRoomNumbers:", error.message);
-    res.status(500).json({ message: error.message });
+    console.error("getAvailableRoomNumbers error:", error);
+    return res.status(500).json({ message: error.message });
   }
 };
+
 
 
 exports.getAvailableRoomNumbersByDate = async (req, res) => {

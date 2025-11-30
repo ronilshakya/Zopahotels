@@ -90,8 +90,15 @@ const AddRoom = () => {
       });
 
     } catch (error) {
-      console.error(error);
-      setMessage(error.response?.data?.message || error.message || "Failed to add room");
+      const errorMessage = error.response?.data?.message || error.message || "Failed to add room";
+    setMessage(errorMessage);
+       Swal.fire({
+        title: 'Error',
+        text: errorMessage,
+        icon: 'error',
+        confirmButtonText: 'OK',
+        position: 'center'
+      });
     } finally {
       setLoading(false);
     }

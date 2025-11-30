@@ -230,29 +230,6 @@ const AdminAddBooking = () => {
                   ))}
                 </select>
               </div>
-
-             {/* Number of Rooms Dropdown */}
-{/* Number of Rooms Dropdown */}
-{/* {r.roomId && rooms.find(room => room._id === r.roomId)?.status !== "maintenance" && (
-  <div>
-    <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
-    <select
-      value={r.numRooms || ""}
-      onChange={(e) => handleNumRoomsChange(index, e)}
-      disabled={!availableRoomCounts[r.roomId] || loading}
-      className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-    >
-      <option value="">Select Number</option>
-      {Array.from({ length: availableRoomCounts[r.roomId] || 0 }, (_, i) => i + 1).map(
-        (n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        )
-      )}
-    </select>
-  </div>
-)} */}
               <div>
   <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
   <select
@@ -268,7 +245,7 @@ const AdminAddBooking = () => {
         if (!roomType) return null;
 
         // count rooms not under maintenance
-        const maintenanceCount = roomType.rooms.filter(r => r.status === "maintenance").length;
+        const maintenanceCount = roomType.rooms.filter(r => r.status === "not_available").length;
 
         // subtract maintenance rooms from availableRoomCounts
         const maxSelectable = Math.max(availableRoomCounts[r.roomId] - maintenanceCount, 0);

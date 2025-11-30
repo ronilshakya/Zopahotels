@@ -269,7 +269,7 @@ const EditRoomPage = () => {
         className="w-1/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
       >
         <option value="available">Available</option>
-        <option value="maintenance">Maintenance</option>
+        <option value="not_available">Not Available</option>
       </select>
 
       {/* Remove Room Button */}

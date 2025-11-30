@@ -45,7 +45,7 @@ const SearchRoomsPage = () => {
 
       // Filter out room numbers that are under maintenance
       const availableRoomNumbers = roomDetails.rooms
-        .filter(r => r.status !== 'maintenance')
+        .filter(r => r.status !== 'not_available')
         .map(r => r.roomNumber);
 
       // Skip rooms if no available numbers left

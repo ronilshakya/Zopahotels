@@ -75,13 +75,13 @@ const RoomStatus = () => {
 
         {/* Rooms */}
         {rooms.map((room) => (
-          <div key={room._id} className="mb-6">
+          <div key={room._id} className="mb-6 bg-gray-50 p-4 rounded-lg shadow">
             <h2 className="text-xl font-semibold mb-2">{room.type}</h2>
             <div className="flex flex-wrap gap-2">
               {room.rooms.map((r) => {
                 let bgColor = 'bg-green-600'; // default available
 
-                if (r.status === 'maintenance') bgColor = 'bg-yellow-500';
+                if (r.status === 'not_available') bgColor = 'bg-yellow-500';
                 else if (isOccupied(r.roomNumber)) bgColor = 'bg-red-600';
 
                 return (
