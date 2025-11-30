@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import preloader from '../../assets/preloader.gif';
 import Button from '../../components/Button';
+import { API_URL } from '../../config';
 
 const AllUsers = () => {
   const [allUsers, setAllUsers] = useState([]);
@@ -70,7 +71,7 @@ const AllUsers = () => {
       </div>
     );
   }
-
+  console.log(allUsers)
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-lg p-6">
@@ -99,6 +100,7 @@ const AllUsers = () => {
             <table className="w-full table-auto border-collapse">
               <thead>
                 <tr className="bg-gray-200 text-gray-700">
+                  <th className="px-4 py-3 text-left font-semibold text-sm">Image</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Name</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Email</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Phone</th>
@@ -109,6 +111,7 @@ const AllUsers = () => {
               <tbody>
                 {allUsers.map((user) => (
                   <tr key={user._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
+                    <td className="px-4 py-3 text-gray-600 text-sm"><img src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} className='w-10' alt="prof" /></td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.name}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.email}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.phone}</td>

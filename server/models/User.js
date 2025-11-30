@@ -52,7 +52,10 @@ const userSchema = new mongoose.Schema({
         enum: ["active", "inactive"],
         default: "active"
     },
-
+    profileImage: {
+        type: String,
+        default: "default.png"
+    },
     verificationToken: String,
     resetToken: String,
     resetTokenExpiry: Date

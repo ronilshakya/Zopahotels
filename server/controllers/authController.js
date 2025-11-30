@@ -4,7 +4,9 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const nodemailer = require('nodemailer');
-const validator = require('validator')
+const validator = require('validator');
+const fs = require("fs");
+const path = require("path");
 
 exports.registerUser = async (req,res) =>{
     try {
@@ -195,17 +197,32 @@ exports.updateUser = async (req,res) =>{
     }
 }
 
-exports.deleteUser = async (req,res) =>{
-    try {
-        const user = await User.findByIdAndDelete(req.params.id);
-        if(!user) {
-            return res.status(404).json({message: "User not found"});
-        }
-        res.json({message: "User Deleted Successfully"});
-    } catch (error) {
-        return res.status(500).json({message: error.message});        
+
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
     }
-}
+
+    // Delete profile image if it exists and is not the default
+    if (user.profileImage && user.profileImage !== "default.png") {
+      const filePath = path.join(__dirname, "../uploads/profile-pictures", user.profileImage);
+      fs.unlink(filePath, (err) => {
+        if (err) console.error("Failed to delete profile image:", err);
+      });
+    }
+
+    await User.findByIdAndDelete(req.params.id);
+
+    res.json({ message: "User Deleted Successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
 
 exports.registerAdmin = async (req, res) => {
     try {
@@ -424,7 +441,7 @@ exports.searchUsers = async (req, res) => {
       .sort({ createdAt: -1 })
       .skip(Number(skip))
       .limit(Number(limit))
-      .select("name email phone createdAt"); // select only required fields
+      .select("name email phone profileImage createdAt"); // select only required fields
 
     res.status(200).json({
       users,
@@ -440,3 +457,24 @@ exports.searchUsers = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 }
+
+exports.uploadProfileImage = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profileImage: req.file.filename },
+      { new: true } // return updated document
+    );
+
+    res.status(200).json({
+      message: "Profile picture updated!",
+      profileImage: user.profileImage // send the new filename
+    });
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};

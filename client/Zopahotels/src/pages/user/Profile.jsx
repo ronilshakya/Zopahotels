@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUserById } from "../../api/authApi";
 import preloader from '../../assets/preloader.gif'
+import { API_URL } from "../../config";
 
 const Profile = () => {
   const [user, setUser] = useState(null);
@@ -54,6 +55,13 @@ const Profile = () => {
         </h2>
 
         <div className="space-y-4">
+          <div>
+            <img 
+              src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
+              alt="prof" 
+              className="w-32"
+            />
+          </div>
           <div>
             <p className="text-gray-600 font-medium">Name</p>
             <p className="text-gray-800">{user.name}</p>

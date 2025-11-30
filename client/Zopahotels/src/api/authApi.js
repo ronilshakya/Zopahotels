@@ -175,3 +175,19 @@ export const searchUsers = async (token, search = '', page = 1, limit = 10) => {
   }
 };
 
+export const uploadProfileImage = async (file, token) => {
+  try {
+    const formData = new FormData();
+    formData.append("profileImage", file);
+    const res = await axios.put(`${API_URL_EXTENDED}/upload-profile-image`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+        Authorization: `Bearer ${token}`
+      }
+    });
+    return res.data;
+  } catch (error) {
+    console.error("Upload Profile Image Error:", error.response?.data || error.message);
+    throw error;
+  }
+}

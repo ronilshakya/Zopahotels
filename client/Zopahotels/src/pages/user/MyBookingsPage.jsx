@@ -12,6 +12,7 @@ const MyBookingsPage = () => {
   const [rooms, setRooms] = useState([]);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const {hotel} = useHotel();
   const navigate = useNavigate();
 
@@ -145,10 +146,18 @@ const MyBookingsPage = () => {
             {booking.rooms.map((r) => (
               <li key={r._id}>
                 <p>{r.roomId.type} - Room {r.roomNumber}</p>
+                {!imgLoaded && (
+                  <img
+                    src={preloader}
+                    className="h-32 w-full object-contain rounded-lg m-4 animate-pulse"
+                    alt="loading"
+                  />
+                )}
                 <img
                   src={`${API_URL}uploads/${rooms.find(room => room._id === r.roomId._id)?.images?.[0] || "default.png"}`}
                   alt=""
-                  className="rounded-xl h-32 w-full object-cover mt-4"
+                  className={`rounded-xl h-32 w-full object-cover mt-4 ${imgLoaded ? "block" : "hidden"}`}
+                  onLoad={() => setImgLoaded(true)}
                 />
               </li>
             ))}

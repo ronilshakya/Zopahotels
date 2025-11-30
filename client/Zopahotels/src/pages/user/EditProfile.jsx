@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUserById, updateUser } from "../../api/authApi";
+import { getUserById, updateUser, uploadProfileImage } from "../../api/authApi";
 import Swal from "sweetalert2";
 import preloader from '../../assets/preloader.gif'
 
@@ -17,10 +17,11 @@ const EditProfile = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  const token = localStorage.getItem("authToken");
+  const userData = JSON.parse(localStorage.getItem("user"));
+  
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem("authToken");
-      const userData = JSON.parse(localStorage.getItem("user"));
       if (!token || !userData) {
         navigate("/login");
         return;
@@ -74,6 +75,27 @@ const EditProfile = () => {
       });
     }
   };
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png"];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({ title: "Only JPG and PNG are allowed", icon: "warning" });
+      return;
+    }
+
+    try {
+      const res = await uploadProfileImage(file, token);
+      setFormData(prev => ({ ...prev, profileImage: res.profileImage }));
+      Swal.fire({ title: "Profile picture updated!", icon: "success" });
+    } catch (error) {
+      console.error(error.response?.data || error.message);
+      Swal.fire({ title: "Failed to update profile picture.", icon: "error" });
+    }
+  };
+
 
   if (loading) {
     return (
@@ -175,6 +197,11 @@ const EditProfile = () => {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-gray-700 font-medium mb-1">Profile Picture</label>
+            <input type="file" accept="image/png, image/jpeg" onChange={handleUpload} />
           </div>
 
           <button

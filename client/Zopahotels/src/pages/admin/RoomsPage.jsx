@@ -90,7 +90,7 @@ const handleDeleteRoom = async (id) => {
       </div>
 
       {allRooms.length === 0 ? (
-        <p className="text-gray-500 text-center">No rooms available</p>
+        <p className="text-gray-500 text-center">No rooms added</p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {allRooms.map((room) => (
