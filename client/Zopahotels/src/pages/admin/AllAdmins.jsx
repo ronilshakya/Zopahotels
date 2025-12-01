@@ -10,6 +10,7 @@ const AllAdmins = () => {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('adminToken');
   const navigate = useNavigate();
+  const [imgLoaded, setImgLoaded] = useState(false)
 
   const handleEditUser = (id) => {
     navigate(`/admin/edit-user/${id}`);
@@ -109,18 +110,26 @@ const AllAdmins = () => {
                   className="border-b border-gray-200 hover:bg-gray-50 transition duration-200"
                 >
                   <td className="px-4 py-3 text-gray-600 text-sm">
-                                        <a
-                                          href={`${API_URL}uploads/profile-pictures/${user.profileImage}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                        >
-                                          <img 
-                                            src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
-                                            className='w-10 h-10 object-cover rounded-full'
-                                             alt="prof" 
-                                          />
-                                          </a>
-                                      </td>
+                    <a
+                      href={`${API_URL}uploads/profile-pictures/${user.profileImage}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {!imgLoaded && (
+                        <img 
+                          src={preloader} 
+                          className='w-10 h-10 object-cover rounded-full'
+                           alt="prof" 
+                        />
+                      )}
+                      <img 
+                        src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
+                        className={ `w-10 h-10 object-cover rounded-full ${imgLoaded ? 'block' : 'hidden'}`}
+                         alt="prof" 
+                         onLoad={()=>setImgLoaded(true)}
+                      />
+                      </a>
+                  </td>
                   <td className="px-4 py-3 text-gray-600 text-sm">{user.name}</td>
                   <td className="px-4 py-3 text-gray-600 text-sm">{user.email}</td>
                   <td className="px-4 py-3 text-gray-600 text-sm">{user.role}</td>

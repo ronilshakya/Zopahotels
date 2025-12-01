@@ -3,7 +3,8 @@ import { getAllBookings } from "../../api/bookingApi";
 import { getAllRooms } from "../../api/roomApi"; // Assume you have this API
 import Button from "../../components/Button";
 import { useNavigate } from "react-router-dom";
-import preloader from '../../assets/preloader.gif'
+import preloader from '../../assets/preloader.gif';
+import Chart from "react-apexcharts";
 
 const AdminDashboard = () => {
   const [arrivals, setArrivals] = useState([]);
@@ -13,6 +14,8 @@ const AdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const token = localStorage.getItem("adminToken");
   const navigate = useNavigate();
+  const [monthlyStats, setMonthlyStats] = useState({ labels: [], data: [], revenue: [] });
+
 
   useEffect(() => {
     const fetchDashboard = async () => {
@@ -20,7 +23,7 @@ const AdminDashboard = () => {
       try {
         const bookings = await getAllBookings(token);
         const rooms = await getAllRooms(token);
-
+        
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
@@ -56,21 +59,89 @@ const AdminDashboard = () => {
         setDepartures(departuresToday);
         setAvailableRooms(availableRoomCount);
         setLatestBookings(sortedBookings.slice(0, 5));
+
+        // Create monthly bookings count for graph
+        const monthlyData = {};
+        bookings.forEach((b) => {
+          const month = new Date(b.createdAt).toLocaleString("default", { month: "short" });
+          monthlyData[month] = (monthlyData[month] || 0) + 1;
+        });
+
+        const monthlyRevenue = {};
+        bookings.forEach((b) => {
+          const month = new Date(b.createdAt).toLocaleString("default", { month: "short" });
+          monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (b.totalPrice || 0);
+        });
+
+        setMonthlyStats({
+          labels: Object.keys(monthlyData),
+          data: Object.values(monthlyData),
+          revenue: Object.values(monthlyRevenue)
+        });
+        
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
         setLoading(false);
       }
     };
-
+    
     fetchDashboard();
   }, [token]);
-
+  
+  
   if (loading) return(
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <p className="text-gray-600 text-lg"><img src={preloader} className="w-16" alt="preloader" /></p>
     </div>
   )
+  
+  const chartOptions = {
+    chart: {
+      id: "monthly-bookings",
+      toolbar: { show: false },
+    },
+    xaxis: {
+      categories: monthlyStats.labels,
+    },
+    yaxis: {
+      min: 0,
+    },
+    dataLabels: { enabled: false },
+    tooltip: { enabled: true },
+  };
+  
+  console.log(arrivals)
+  const chartSeries = [
+    {
+      name: "Bookings",
+      data: monthlyStats.data,
+    },
+  ];
+
+  const revenueChartOptions = {
+    chart: {
+      id: "monthly-revenue",
+      toolbar: { show: false },
+    },
+    xaxis: {
+      categories: monthlyStats.labels,
+    },
+    yaxis: {
+      min: 0,
+    },
+    dataLabels: { enabled: false },
+    tooltip: { enabled: true },
+  };
+
+  const revenueChartSeries = [
+    {
+      name: "Revenue ($)",
+      data: monthlyStats.revenue || [],
+    },
+  ];
+
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <h1 className="text-3xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
@@ -94,6 +165,34 @@ const AdminDashboard = () => {
           <p className="text-2xl font-bold">{latestBookings.length}</p>
         </div>
       </div>
+
+      <div className="grid grid-cols-2 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 mr-2">
+          <h2 className="text-xl font-bold mb-4">Revenue per Month</h2>
+          <Chart options={revenueChartOptions} series={revenueChartSeries} type="line" height={300} />
+        </div>
+
+        {/* graph */}
+        <div className="bg-white rounded-lg shadow p-4 ml-2">
+          <h2 className="text-xl font-bold mb-4">Bookings per Month</h2>
+          <Chart options={chartOptions} series={chartSeries} type="bar" height={300} />
+
+        </div>
+      </div>
+      {/* <div className="grid grid-cols-2 mb-6">
+        <div className="bg-white rounded-lg shadow p-4 mr-2">
+          <h2 className="text-xl font-bold mb-4">Arrivals Today</h2>
+          <ul className="list-disc list-inside">
+            {arrivals.map((a) => (
+              <li key={a._id} className="mb-2">
+                {a.user?.name || "Deleted User"} - Rooms:{" "}
+                {a.rooms.map((r) => `${r.roomId?.type}-${r.roomNumber}`).join(", ")}
+              </li>
+            ))}
+            {arrivals.length === 0 && <p className="text-gray-600">No arrivals today.</p>}
+          </ul>
+        </div>
+        </div> */}
 
       {/* Latest Bookings Table */}
       <div className="bg-white rounded-lg shadow p-4">

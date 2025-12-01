@@ -13,6 +13,7 @@ const AllUsers = () => {
   const [pagination, setPagination] = useState({ page: 1, totalPages: 1, limit: 10 });
   const token = localStorage.getItem('adminToken');
   const navigate = useNavigate();
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   const fetchUsers = async (page = 1, search = searchText) => {
     setLoading(true);
@@ -117,11 +118,19 @@ const AllUsers = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <img 
-                          src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
-                          className='w-10 h-10 object-cover rounded-full'
-                           alt="prof" 
-                        />
+                        {!imgLoaded && (
+                                                <img 
+                                                  src={preloader} 
+                                                  className='w-10 h-10 object-cover rounded-full'
+                                                   alt="prof" 
+                                                />
+                                              )}
+                                              <img 
+                                                src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
+                                                className={ `w-10 h-10 object-cover rounded-full ${imgLoaded ? 'block' : 'hidden'}`}
+                                                 alt="prof" 
+                                                 onLoad={()=>setImgLoaded(true)}
+                                              />
                         </a>
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{user.name}</td>

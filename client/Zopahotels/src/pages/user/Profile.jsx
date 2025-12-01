@@ -8,6 +8,7 @@ const Profile = () => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const [imgLoaded, setImgLoaded] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -56,11 +57,19 @@ const Profile = () => {
 
         <div className="space-y-4">
           <div>
-            <img 
-              src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
-              alt="prof" 
-              className="w-32 mx-auto h-32 rounded-full object-cover mb-4"
-            />
+            {!imgLoaded && (
+                <img 
+                  src={preloader} 
+                  className='w-10 h-10 object-cover rounded-full'
+                   alt="prof" 
+                />
+              )}
+              <img 
+                src={`${API_URL}uploads/profile-pictures/${user.profileImage}`} 
+                className={ `w-32 mx-auto h-32 rounded-full object-cover mb-4 ${imgLoaded ? 'block' : 'hidden'}`}
+                 alt="prof" 
+                 onLoad={()=>setImgLoaded(true)}
+              />
           </div>
           <div>
             <p className="text-gray-600 font-medium">Name</p>
