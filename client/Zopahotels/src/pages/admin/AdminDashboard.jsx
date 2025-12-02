@@ -166,14 +166,14 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 mb-6">
-        <div className="bg-white rounded-lg shadow p-4 mr-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-bold mb-4">Revenue per Month</h2>
           <Chart options={revenueChartOptions} series={revenueChartSeries} type="line" height={300} />
         </div>
 
         {/* graph */}
-        <div className="bg-white rounded-lg shadow p-4 ml-2">
+        <div className="bg-white rounded-lg shadow p-4">
           <h2 className="text-xl font-bold mb-4">Bookings per Month</h2>
           <Chart options={chartOptions} series={chartSeries} type="bar" height={300} />
 

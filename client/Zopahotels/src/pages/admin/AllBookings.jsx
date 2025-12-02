@@ -5,6 +5,10 @@ import Button from '../../components/Button';
 import Swal from 'sweetalert2';
 import preloader from '../../assets/preloader.gif';
 import { useHotel } from '../../context/HotelContext';
+import { FiEdit } from "react-icons/fi";
+import { MdDelete } from "react-icons/md";
+import { MdOutlineOpenInNew } from "react-icons/md";
+
 
 const AllBookings = () => {
   const [bookings, setBookings] = useState([]);
@@ -89,6 +93,7 @@ const AllBookings = () => {
     </div>
   );
 
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6">
@@ -149,7 +154,23 @@ const AllBookings = () => {
               <tbody>
                 {bookings.map((booking) => (
                   <tr key={booking._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
-                    <td className="px-4 py-3 text-gray-600 text-sm">{booking.user?.name}</td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">
+                      {booking.customerType == "Member" ? 
+                        (
+                          <div className='w-[150px]'>
+                            <p>{booking.user?.name}</p>
+                            <p className='text-xs my-1 text-gray-500'>{booking.user?.phone}</p>
+                            <span className='bg-gray-500 text-xs text-white p-1 my-1 inline-block font-semibold'>Member</span>
+                          </div>
+                        ):(
+                          <div className='w-[150px]'>
+                            <p>{booking.guestFirstName} {booking.guestLastName}</p>
+                            <p className='text-xs my-1 text-gray-500'>{booking.guestPhone}</p>
+                            <span className='bg-gray-500 text-xs text-white p-1 my-1 inline-block font-semibold'>Guest</span>
+                          </div>
+                          
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-gray-600 text-sm ">
                       <ul className='list-disc'>
                         {booking.rooms.map((r, i) => (
@@ -165,8 +186,14 @@ const AllBookings = () => {
                     <td className="px-4 py-3 text-gray-600 text-sm">{booking.status}</td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={() => navigate(`/admin/edit-booking/${booking._id}`)} className="px-3 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700">Edit</button>
-                        <button onClick={() => handleDeleteBooking(booking._id)} className="px-3 py-1 bg-red-600 text-white rounded-md hover:bg-red-700">Delete</button>
+                        <button 
+                          onClick={() => navigate(`/admin/booking-details/${booking._id}`)} 
+                          className="px-2 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                        >
+                          <MdOutlineOpenInNew />
+                        </button>
+                        <button onClick={() => navigate(`/admin/edit-booking/${booking._id}`)} className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"><FiEdit /></button>
+                        <button onClick={() => handleDeleteBooking(booking._id)} className="px-2 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"><MdDelete /></button>
                       </div>
                     </td>
                   </tr>

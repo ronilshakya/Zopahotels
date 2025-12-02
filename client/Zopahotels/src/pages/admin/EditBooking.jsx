@@ -24,10 +24,13 @@ const EditBooking = () => {
   const [loading, setLoading] = useState(false);
   const [fetchLoading, setFetchLoading] = useState(true);
   const [message, setMessage] = useState('');
+  const [booking, setBooking] = useState({})
 
   // Fetch booking details
   useEffect(() => {
     const fetchBooking = async () => {
+      const bookingData = await getBookingById(id, token);
+      setBooking(bookingData)
       if (!token) {
         Swal.fire({ title:"Authentication token is missing. Please log in." });
         navigate('/login');
@@ -36,7 +39,6 @@ const EditBooking = () => {
       }
 
       try {
-        const bookingData = await getBookingById(id, token);
 
         setForm({
           checkIn: bookingData.checkIn ? new Date(bookingData.checkIn).toISOString().split('T')[0] : '',
@@ -49,6 +51,15 @@ const EditBooking = () => {
             type: r.roomId?.type || 'Unknown',
           })) || [],
           status: bookingData.status || 'pending',
+          // ✅ Guest fields
+          guestFirstName: bookingData.guestFirstName || '',
+          guestLastName: bookingData.guestLastName || '',
+          guestEmail: bookingData.guestEmail || '',
+          guestPhone: bookingData.guestPhone || '',
+          guestAddress: bookingData.guestAddress || '',
+          guestCity: bookingData.guestCity || '',
+          guestZipCode: bookingData.guestZipCode || '',
+          guestCountry: bookingData.guestCountry || ''
         });
 
         // ✅ Set bookingSource correctly from bookingData
@@ -91,7 +102,6 @@ const EditBooking = () => {
               bookingId: id,
             }, token);
             newAvailable[room.roomId] = res.availableRoomNumbers || [];
-            console.log(res)
           }
         }
         setAvailableRoomNumbers(newAvailable);
@@ -115,12 +125,38 @@ const EditBooking = () => {
     setForm({ ...form, selectedRooms: updatedRooms });
   };
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setMessage('');
 
     try {
+      // ✅ Email validation (if provided)
+    if (booking?.customerType === "Guest" && form.guestEmail) {
+      const emailRegex = /^\S+@\S+\.\S+$/;
+      if (!emailRegex.test(form.guestEmail)) {
+        setLoading(false);
+        return Swal.fire({
+          title: "Invalid email format",
+          icon: "error",
+          position: "top-end",
+        });
+      }
+    }
+
+    // ✅ Phone validation
+    if (booking?.customerType === "Guest" && form.guestPhone) {
+      const phoneRegex = /^[0-9]{7,15}$/; // digits only, length 7–15
+      if (!phoneRegex.test(form.guestPhone)) {
+        setLoading(false);
+        return Swal.fire({
+          title: "Invalid phone number. Use digits only (7–15 characters).",
+          icon: "error",
+          position: "top-end",
+        });
+      }
+    }
       const payload = {
         checkIn: form.checkIn,
         checkOut: form.checkOut,
@@ -130,6 +166,18 @@ const EditBooking = () => {
         status: form.status,
         bookingSource
       };
+      if (booking?.customerType === "Guest") {
+        Object.assign(payload, {
+          guestFirstName: form.guestFirstName,
+          guestLastName: form.guestLastName,
+          guestEmail: form.guestEmail,
+          guestPhone: form.guestPhone,
+          guestAddress: form.guestAddress,
+          guestCity: form.guestCity,
+          guestZipCode: form.guestZipCode,
+          guestCountry: form.guestCountry
+        });
+      }
 
       await updateBooking({ id, payload, token });
       Swal.fire({
@@ -168,6 +216,109 @@ const EditBooking = () => {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
+
+          {/* Guest Info */}
+{booking?.customerType === "Guest" && (
+  <div className="space-y-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+        <input
+          type="text"
+          name="guestFirstName"
+          value={form.guestFirstName}
+          onChange={handleChange}
+          required
+          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+        <input
+          type="text"
+          name="guestLastName"
+          value={form.guestLastName}
+          onChange={handleChange}
+          required
+          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+      <input
+        type="email"
+        name="guestEmail"
+        value={form.guestEmail}
+        onChange={handleChange}
+        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+      <input
+        type="text"
+        name="guestPhone"
+        value={form.guestPhone}
+        onChange={handleChange}
+        required
+        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+      <input
+        type="text"
+        name="guestAddress"
+        value={form.guestAddress}
+        onChange={handleChange}
+        required
+        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+        <input
+          type="text"
+          name="guestCity"
+          value={form.guestCity}
+          onChange={handleChange}
+          required
+          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Zip Code</label>
+        <input
+          type="text"
+          name="guestZipCode"
+          value={form.guestZipCode}
+          onChange={handleChange}
+          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+      <input
+        type="text"
+        name="guestCountry"
+        value={form.guestCountry}
+        onChange={handleChange}
+        required
+        className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+  </div>
+)}
+
+          
           {/* Check-In / Check-Out */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Check-In Date</label>

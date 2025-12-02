@@ -41,6 +41,7 @@ const CheckoutPage = () => {
         roomId: room.roomId,
         quantity: room.quantity
       })),
+      customerType: "Member",
       checkIn,
       checkOut,
       adults,

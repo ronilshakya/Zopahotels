@@ -2,11 +2,34 @@ const  mongoose  = require("mongoose");
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const User = require("../models/User");
+const { v4: uuidv4 } = require("uuid");
 
 exports.createBooking = async (req, res) => {
   try {
-    const { rooms, checkIn, checkOut, adults, children } = req.body;
-    const userId = req.user.id;
+    const { customerType, guestFirstName, guestLastName, guestEmail,guestCity,guestZipCode,guestCountry, guestPhone, guestAddress, rooms, checkIn, checkOut, adults, children } = req.body;
+    let userId = null;
+
+    if (!customerType || !["Member", "Guest"].includes(customerType)) {
+      return res.status(400).json({ message: "Invalid customer type" });
+    }
+
+    // For members, userId must come from authenticated user
+    if (customerType === "Member") {
+      if (!req.user || !req.user.id) {
+        return res.status(401).json({ message: "User authentication required for member bookings" });
+      }
+      userId = req.user.id;
+    }
+
+    // For guests, guest info is required
+    if (customerType === "Guest") {
+      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestPhone || !guestAddress) {
+        return res.status(400).json({ message: "Guest name, city, country, phone, and address are required" });
+      }
+      if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+    }
 
     if (!rooms || rooms.length === 0) {
       return res.status(400).json({ message: "At least one room type must be selected" });
@@ -37,13 +60,12 @@ exports.createBooking = async (req, res) => {
 
       const quantity = r.quantity || 1;
 
-      if (adults > roomDoc.adults || children > roomDoc.children) {
+      if (adults > roomDoc.adults * quantity || children > roomDoc.children * quantity) {
         return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
       }
 
       totalPrice += roomDoc.price * nights * quantity;
 
-      // Add each room instance to bookingRooms
       for (let i = 0; i < quantity; i++) {
         bookingRooms.push({
           roomId: r.roomId,
@@ -52,8 +74,8 @@ exports.createBooking = async (req, res) => {
       }
     }
 
-    const booking = await Booking.create({
-      user: userId,
+    const bookingData = {
+      customerType,
       rooms: bookingRooms,
       checkIn,
       checkOut,
@@ -61,11 +83,26 @@ exports.createBooking = async (req, res) => {
       children,
       totalPrice,
       status: "pending",
-      numberOfRooms: rooms.reduce((sum, r) => sum + (r.quantity || 1), 0), // total number of rooms booked
-      bookingId: new mongoose.Types.ObjectId().toString().slice(-6)
-    });
+      numberOfRooms: rooms.reduce((sum, r) => sum + (r.quantity || 1), 0),
+      bookingId: uuidv4().slice(0, 8)
+    };
+
+    if (customerType === "Member") bookingData.user = userId;
+    if (customerType === "Guest") {
+      bookingData.guestFirstName = guestFirstName;
+      bookingData.guestLastName = guestLastName;
+      bookingData.guestEmail = guestEmail;
+      bookingData.guestCity = guestCity;
+      bookingData.guestZipCode = guestZipCode;
+      bookingData.guestCountry = guestCountry;
+      bookingData.guestPhone = guestPhone;
+      bookingData.guestAddress = guestAddress;
+    }
+
+    const booking = await Booking.create(bookingData);
 
     res.status(201).json({ message: "Booking created", booking });
+
   } catch (error) {
     console.error("createBooking error:", error.message);
     res.status(500).json({ message: error.message });
@@ -173,7 +210,20 @@ exports.updateBooking = async (req, res) => {
     }
 
 
-    const allowedFields = ["rooms", "checkIn", "checkOut", "status", "adults", "children","bookingSource"];
+    let allowedFields = ["rooms", "checkIn", "checkOut", "status", "adults", "children","bookingSource"];
+    if (booking.customerType === "Guest") {
+      allowedFields = allowedFields.concat([
+        "guestFirstName",
+        "guestLastName",
+        "guestEmail",
+        "guestPhone",
+        "guestAddress",
+        "guestCity",
+        "guestZipCode",
+        "guestCountry"
+      ]);
+    }
+
     const updates = {};
 
     allowedFields.forEach((key) => {
@@ -181,6 +231,23 @@ exports.updateBooking = async (req, res) => {
         updates[key] = req.body[key];
       }
     });
+
+    if (booking.customerType === "Guest") {
+      if (updates.guestEmail || updates.guestPhone) {
+        const conflictMember = await User.findOne({
+          $or: [
+            updates.guestEmail ? { email: updates.guestEmail } : null,
+            updates.guestPhone ? { phone: updates.guestPhone } : null
+          ].filter(Boolean)
+        });
+
+        if (conflictMember) {
+          return res.status(400).json({
+            message: "Guest email or phone cannot match an existing member account"
+          });
+        }
+      }
+    }
 
     if (updates.checkIn || updates.checkOut || updates.rooms || updates.adults || updates.children) {
       const checkInDate = new Date(updates.checkIn || booking.checkIn);
@@ -400,10 +467,51 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
 
 exports.createBookingAdmin = async (req, res) => {
   try {
-    const { userId, rooms, checkIn, checkOut, adults, children, bookingSource } = req.body;
+    const { 
+      customerType, 
+      userId, 
+      guestFirstName, 
+      guestLastName, 
+      guestEmail, 
+      guestPhone, 
+      guestAddress, 
+      guestCity, 
+      guestZipCode, 
+      guestCountry, 
+      rooms, 
+      checkIn, 
+      checkOut, 
+      adults, 
+      children, 
+      bookingSource 
+    } = req.body;
 
-    if (!userId) {
-      return res.status(400).json({ message: "User ID is required" });
+    // Validate customer type
+    if (!customerType || !["Member", "Guest"].includes(customerType)) {
+      return res.status(400).json({ message: "Customer type must be Member or Guest" });
+    }
+
+    // Validate user/guest info
+    if (customerType === "Member" && !userId) {
+      return res.status(400).json({ message: "User ID is required for members" });
+    }
+    if (customerType === "Guest") {
+      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestPhone || !guestAddress) {
+        return res.status(400).json({ message: "Guest first name, last name, city, country, phone, and address are required for guests" });
+      }
+      if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      const existingMember = await User.findOne({
+          $or: [
+            guestEmail ? { email: guestEmail } : null,
+            { phone: guestPhone }
+          ].filter(Boolean)
+        });
+        if (existingMember) {
+          return res.status(400).json({ message: "Guest email or phone matches an existing member account" });
+        }
     }
 
     if (!rooms || rooms.length === 0) {
@@ -432,9 +540,9 @@ exports.createBookingAdmin = async (req, res) => {
       const roomDoc = await Room.findById(r.roomId);
       if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
 
-      const quantity = Number(r.numRooms || 1);
+      const quantity = Number(r.quantity || 1);
 
-      if (adults > roomDoc.adults || children > roomDoc.children) {
+      if (adults > roomDoc.adults * quantity || children > roomDoc.children * quantity) {
         return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
       }
 
@@ -448,8 +556,8 @@ exports.createBookingAdmin = async (req, res) => {
       }
     }
 
-    const booking = await Booking.create({
-      user: userId,
+    const bookingPayload = {
+      customerType,
       rooms: bookingRooms,
       checkIn,
       checkOut,
@@ -457,10 +565,25 @@ exports.createBookingAdmin = async (req, res) => {
       children,
       totalPrice,
       status: "pending",
-      numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.numRooms) || 1), 0),
-      bookingId: new mongoose.Types.ObjectId().toString().slice(-6),
+      numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
+      bookingId: uuidv4().slice(0, 8),
       bookingSource
-    });
+    };
+
+    if (customerType === "Member") {
+      bookingPayload.user = userId;
+    } else {
+      bookingPayload.guestFirstName = guestFirstName;
+      bookingPayload.guestLastName = guestLastName;
+      bookingPayload.guestEmail = guestEmail;
+      bookingPayload.guestCity = guestCity;
+      bookingPayload.guestZipCode = guestZipCode;
+      bookingPayload.guestCountry = guestCountry;
+      bookingPayload.guestPhone = guestPhone;
+      bookingPayload.guestAddress = guestAddress;
+    }
+
+    const booking = await Booking.create(bookingPayload);
 
     res.status(201).json({ message: "Booking created by admin", booking });
   } catch (error) {
@@ -468,6 +591,8 @@ exports.createBookingAdmin = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 exports.searchBookings = async (req, res) => {
   try {
@@ -477,33 +602,53 @@ exports.searchBookings = async (req, res) => {
 
     // Text search
     if (search) {
-      query.$or = [
-        { bookingId: { $regex: search, $options: "i" } }
-      ];
-    }
+      // Member search
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } },
+        ]
+      }).select("_id");
 
-    // Search users by name/email
-    const users = await User.find({
-      $or: [
-        { name: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } }
-      ]
-    }).select("_id");
+      const memberOrGuestQuery = [];
 
-    if (users.length > 0) {
-      query.$or = query.$or || [];
-      query.$or.push({ user: { $in: users.map(u => u._id) } });
+      // Member bookings
+      const memberQuery = { customerType: "Member" };
+      const memberSearchConditions = [];
+
+      memberSearchConditions.push({ bookingId: { $regex: search, $options: "i" } });
+
+      if (users.length > 0) {
+        memberSearchConditions.push({ user: { $in: users.map(u => u._id) } });
+      }
+
+      memberQuery.$or = memberSearchConditions;
+      memberOrGuestQuery.push(memberQuery);
+
+      // Guest bookings
+      const guestQuery = {
+        customerType: "Guest",
+        $or: [
+          { bookingId: { $regex: search, $options: "i" } },
+          { guestFirstName: { $regex: search, $options: "i" } },
+          { guestLastName: { $regex: search, $options: "i" } },
+          { guestPhone: { $regex: search, $options: "i" } },
+          { guestEmail: { $regex: search, $options: "i" } },
+        ]
+      };
+      memberOrGuestQuery.push(guestQuery);
+
+      query.$or = memberOrGuestQuery;
     }
 
     // Date filtering
     if (startDate) {
       const start = new Date(startDate);
       let end;
-
       if (endDate) {
         end = new Date(endDate);
       } else {
-        // Single date search → end = start + 1 day
         end = new Date(start);
         end.setDate(end.getDate() + 1);
       }
@@ -515,9 +660,14 @@ exports.searchBookings = async (req, res) => {
       });
     }
 
+    // If search is empty, just show all bookings
+    if (!search && !startDate) {
+      query = {};
+    }
+
     const total = await Booking.countDocuments(query);
     const bookings = await Booking.find(query)
-      .populate("user", "name email")
+      .populate("user", "name phone")
       .populate("rooms.roomId", "type price")
       .sort({ createdAt: -1 })
       .skip(Number(skip))
@@ -537,3 +687,4 @@ exports.searchBookings = async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 };
+

@@ -24,6 +24,7 @@ const AdminAddBooking = () => {
   const { hotel } = useHotel();
 
   const [bookingData, setBookingData] = useState({
+    customerType: "Member",
     userId: "",
     rooms: [{ roomId: "", numRooms: 1 }],
     checkIn: today,
@@ -123,19 +124,39 @@ const AdminAddBooking = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const payload = { ...bookingData, bookingSource }; // include bookingSource
-      const res = await createBookingAdmin({ payload, token: adminToken });
-      Swal.fire("Success", res.message, "success");
-      navigate("/admin/all-bookings");
-    } catch (err) {
-      Swal.fire("Error", err.response?.data?.message || err.message, "error");
-    } finally {
-      setLoading(false);
+  e.preventDefault();
+  setLoading(true);
+  try {
+    // Prepare payload
+    const payload = {
+      ...bookingData,
+      bookingSource, // include booking source
+    };
+
+    // If customer is Guest, remove userId and ensure guest info is included
+    if (bookingData.customerType === "Guest") {
+      delete payload.userId;
+      payload.guestFirstName = bookingData.guestFirstName;
+      payload.guestLastName = bookingData.guestLastName;
+      payload.guestEmail = bookingData.guestEmail;
+      payload.guestPhone = bookingData.guestPhone;
+      payload.guestAddress = bookingData.guestAddress;
+      payload.guestCity = bookingData.guestCity;
+      payload.guestZipCode = bookingData.guestZipCode;
+      payload.guestCountry = bookingData.guestCountry;
     }
-  };
+
+
+    const res = await createBookingAdmin({ payload, token: adminToken });
+    Swal.fire("Success", res.message, "success");
+    navigate("/admin/all-bookings");
+  } catch (err) {
+    Swal.fire("Error", err.response?.data?.message || err.message, "error");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const handleSelectUser = (user) => {
     setBookingData({ ...bookingData, userId: user._id });
@@ -151,36 +172,165 @@ const AdminAddBooking = () => {
         </h1>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6 relative">
-          {/* User search */}
-          <div className="relative">
-            <label className="text-sm font-medium text-gray-700">User</label>
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => {
-                setQuery(e.target.value);
-                setBookingData({ ...bookingData, userId: "" });
-                setShowSuggestions(true);
-              }}
-              onFocus={() => setShowSuggestions(true)}
-              onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
-              placeholder="Search user by name or email"
-              className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-            />
-            {showSuggestions && (query ? filteredUsers : users.slice(0, 5)).length > 0 && (
-              <ul className="absolute z-50 w-full bg-white border rounded-lg mt-1 max-h-48 overflow-auto shadow-lg">
-                {(query ? filteredUsers : users.slice(0, 5)).map((user) => (
-                  <li
-                    key={user._id}
-                    onClick={() => handleSelectUser(user)}
-                    className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
-                  >
-                    {user.name} ({user.email})
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+          {/* Customer Type */}
+<div>
+  <label className="text-sm font-medium text-gray-700">Customer Type</label>
+  <select
+    value={bookingData.customerType}
+    onChange={(e) =>
+      setBookingData({ ...bookingData, customerType: e.target.value })
+    }
+    className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+    required
+  >
+    <option value="Member">Member</option>
+    <option value="Guest">Guest</option>
+  </select>
+</div>
+
+{/* Conditional Fields */}
+{bookingData.customerType === "Member" && (
+  <div className="relative">
+    <label className="text-sm font-medium text-gray-700">User</label>
+    <input
+      type="text"
+      value={query}
+      onChange={(e) => {
+        setQuery(e.target.value);
+        setBookingData({ ...bookingData, userId: "" });
+        setShowSuggestions(true);
+      }}
+      onFocus={() => setShowSuggestions(true)}
+      onBlur={() => setTimeout(() => setShowSuggestions(false), 100)}
+      placeholder="Search user by name or email"
+      className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+      required
+    />
+    {showSuggestions && (query ? filteredUsers : users.slice(0, 5)).length > 0 && (
+      <ul className="absolute z-50 w-full bg-white border rounded-lg mt-1 max-h-48 overflow-auto shadow-lg">
+        {(query ? filteredUsers : users.slice(0, 5)).map((user) => (
+          <li
+            key={user._id}
+            onClick={() => handleSelectUser(user)}
+            className="px-4 py-2 hover:bg-blue-100 cursor-pointer"
+          >
+            {user.name} ({user.email})
+          </li>
+        ))}
+      </ul>
+    )}
+  </div>
+)}
+
+{bookingData.customerType === "Guest" && (
+  <>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="text-sm font-medium text-gray-700">Guest First Name</label>
+        <input
+          type="text"
+          name="guestFirstName"
+          value={bookingData.guestFirstName || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-700">Guest Last Name</label>
+        <input
+          type="text"
+          name="guestLastName"
+          value={bookingData.guestLastName || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="text-sm font-medium text-gray-700">Guest Email</label>
+        <input
+          type="email"
+          name="guestEmail"
+          value={bookingData.guestEmail || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-700">Guest Phone</label>
+        <input
+          type="text"
+          name="guestPhone"
+          value={bookingData.guestPhone || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="text-sm font-medium text-gray-700">Guest Address</label>
+        <input
+          type="text"
+          name="guestAddress"
+          value={bookingData.guestAddress || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-700">City</label>
+        <input
+          type="text"
+          name="guestCity"
+          value={bookingData.guestCity || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label className="text-sm font-medium text-gray-700">Zip Code</label>
+        <input
+          type="text"
+          name="guestZipCode"
+          value={bookingData.guestZipCode || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+        />
+      </div>
+      <div>
+        <label className="text-sm font-medium text-gray-700">Country</label>
+        <select
+          name="guestCountry"
+          value={bookingData.guestCountry || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        >
+          <option value="">Select Country</option>
+          <option value="Nepal">Nepal</option>
+          <option value="India">India</option>
+          <option value="USA">USA</option>
+          <option value="UK">UK</option>
+          <option value="Australia">Australia</option>
+          {/* Add more countries as needed */}
+        </select>
+      </div>
+    </div>
+  </>
+)}
+
 
           {/* Dates */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -231,33 +381,33 @@ const AdminAddBooking = () => {
                 </select>
               </div>
               <div>
-  <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
-  <select
-    value={r.numRooms || ""}
-    onChange={(e) => handleNumRoomsChange(index, e)}
-    disabled={!r.roomId || loading || !availableRoomCounts[r.roomId]}
-    className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-  >
-    <option value="">Select Number</option>
-    {r.roomId &&
-      (() => {
-        const roomType = rooms.find((room) => room._id === r.roomId);
-        if (!roomType) return null;
+                <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
+                <select
+                  value={r.numRooms || ""}
+                  onChange={(e) => handleNumRoomsChange(index, e)}
+                  disabled={!r.roomId || loading || !availableRoomCounts[r.roomId]}
+                  className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value="">Select Number</option>
+                  {r.roomId &&
+                    (() => {
+                      const roomType = rooms.find((room) => room._id === r.roomId);
+                      if (!roomType) return null;
 
-        // count rooms not under maintenance
-        const maintenanceCount = roomType.rooms.filter(r => r.status === "not_available").length;
+                      // count rooms not under maintenance
+                      const maintenanceCount = roomType.rooms.filter(r => r.status === "not_available").length;
 
-        // subtract maintenance rooms from availableRoomCounts
-        const maxSelectable = Math.max(availableRoomCounts[r.roomId] - maintenanceCount, 0);
+                      // subtract maintenance rooms from availableRoomCounts
+                      const maxSelectable = Math.max(availableRoomCounts[r.roomId] - maintenanceCount, 0);
 
-        return Array.from({ length: maxSelectable }, (_, i) => i + 1).map((n) => (
-          <option key={n} value={n}>
-            {n}
-          </option>
-        ));
-      })()}
-  </select>
-</div>
+                      return Array.from({ length: maxSelectable }, (_, i) => i + 1).map((n) => (
+                        <option key={n} value={n}>
+                          {n}
+                        </option>
+                      ));
+                    })()}
+                </select>
+              </div>
 
 
 
@@ -278,7 +428,7 @@ const AdminAddBooking = () => {
             onClick={addRoom}
             className="bg-blue-600 text-white py-2 px-4 rounded mt-2"
           >
-            Add Room
+            Add Another Room
           </button>
 
           {/* Booking Source */}

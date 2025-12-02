@@ -8,3 +8,26 @@
       font-size: 1rem !important;
     }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .printable, .printable * {
+    visibility: visible;
+  }
+   .min-h-screen {
+    min-height: auto !important; /* prevent forcing a new page */
+  }
+  .no-print {
+    display: none !important;
+  }
+  .printable {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    page-break-after: avoid;
+    page-break-before: avoid;
+  }
+}

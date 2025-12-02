@@ -1,11 +1,48 @@
 const mongoose = require('mongoose');
 
 const BookingSchema = new mongoose.Schema({
-    user:{
+    user: {
         type: mongoose.Schema.ObjectId,
         ref: "User",
-        required: true
+        required: function() { return this.customerType === "Member"; } // required only for members
     },
+    guestFirstName: { 
+        type: String,
+        required: function() { return this.customerType === "Guest"; } // required for guests
+    },
+    guestLastName: { 
+        type: String,
+        required: function() { return this.customerType === "Guest"; } // required for guests
+    },
+    guestEmail: { 
+        type: String,
+    },
+    guestPhone: { 
+        type: String,
+        required: function() { return this.customerType === "Guest"; } 
+    },
+    guestAddress: { 
+        type: String,
+        required: function() { return this.customerType === "Guest"; } 
+    },
+    guestCity: { 
+        type: String,
+        required: function() { return this.customerType === "Guest"; } 
+    },
+    guestZipCode: { 
+        type: String,
+    },
+    guestCountry: { 
+        type: String,
+        required: function() { return this.customerType === "Guest"; } 
+    },
+
+    customerType: { 
+        type: String, 
+        enum: ["Member", "Guest"], 
+        required: true 
+    },
+
     rooms: [
         {
             roomId: {
@@ -19,6 +56,7 @@ const BookingSchema = new mongoose.Schema({
             }
         }
     ],
+
     checkIn: {
         type: Date,
         required: true
