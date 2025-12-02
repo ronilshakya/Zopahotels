@@ -25,7 +25,7 @@ const BookingCalendar = () => {
 
             return {
                 id: booking._id,
-                title: `${booking.user?.name || booking.guestName} - ${
+                title: `${booking.user?.name || booking.guestFirstName + ' ' + booking.guestLastName} - ${
                 booking.rooms.map((r) => r.roomNumber).join(", ")
                 }`,
                 start: booking.checkIn,
