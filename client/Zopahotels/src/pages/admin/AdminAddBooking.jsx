@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { getAllUsers } from "../../api/authApi";
 import { getAllRooms } from "../../api/roomApi";
 import { useHotel } from "../../context/HotelContext";
+import { Country, City } from "country-state-city";
 
 const AdminAddBooking = () => {
   const today = new Date().toISOString().split("T")[0];
@@ -22,6 +23,7 @@ const AdminAddBooking = () => {
   const [availableRoomCounts, setAvailableRoomCounts] = useState({});
   const [bookingSource, setBookingSource] = useState("");
   const { hotel } = useHotel();
+  
 
   const [bookingData, setBookingData] = useState({
     customerType: "Member",
@@ -163,6 +165,13 @@ const AdminAddBooking = () => {
     setQuery(`${user.name} (${user.email})`);
     setShowSuggestions(false);
   };
+
+  const countries = Country.getAllCountries();
+  const cities = bookingData.guestCountry
+  ? City.getCitiesOfCountry(
+      countries.find(c => c.name === bookingData.guestCountry)?.isoCode
+    )
+  : [];
   
   return (
     <div className="min-h-screen bg-gray-100 py-10">
@@ -268,11 +277,49 @@ const AdminAddBooking = () => {
           value={bookingData.guestPhone || ""}
           onChange={handleChange}
           className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          required
         />
       </div>
     </div>
 
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div>
+        <label class="text-sm font-medium text-gray-700">Country</label>
+        <input
+          list="countries"
+          name="guestCountry"
+          value={bookingData.guestCountry || ""}
+          onChange={handleChange}
+          class="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+        />
+        <datalist id="countries">
+          {countries.map((country) => (
+            <option key={country.isoCode} value={country.name} />
+          ))}
+        </datalist>
+
+      </div>
+
+      <div>
+        <label className="text-sm font-medium text-gray-700">City</label>
+        <input
+          list="cities"
+          name="guestCity"
+          value={bookingData.guestCity || ""}
+          onChange={handleChange}
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          required
+          disabled={!bookingData.guestCountry}
+        />
+        <datalist id="cities">
+          {cities.map((city) => (
+            <option key={city.name} value={city.name} />
+          ))}
+        </datalist>
+      </div>
+    </div>
+
+      
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label className="text-sm font-medium text-gray-700">Guest Address</label>
@@ -285,20 +332,7 @@ const AdminAddBooking = () => {
           required
         />
       </div>
-      <div>
-        <label className="text-sm font-medium text-gray-700">City</label>
-        <input
-          type="text"
-          name="guestCity"
-          value={bookingData.guestCity || ""}
-          onChange={handleChange}
-          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          required
-        />
-      </div>
-    </div>
 
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
         <label className="text-sm font-medium text-gray-700">Zip Code</label>
         <input
@@ -308,24 +342,6 @@ const AdminAddBooking = () => {
           onChange={handleChange}
           className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
         />
-      </div>
-      <div>
-        <label className="text-sm font-medium text-gray-700">Country</label>
-        <select
-          name="guestCountry"
-          value={bookingData.guestCountry || ""}
-          onChange={handleChange}
-          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          required
-        >
-          <option value="">Select Country</option>
-          <option value="Nepal">Nepal</option>
-          <option value="India">India</option>
-          <option value="USA">USA</option>
-          <option value="UK">UK</option>
-          <option value="Australia">Australia</option>
-          {/* Add more countries as needed */}
-        </select>
       </div>
     </div>
   </>

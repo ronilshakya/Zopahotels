@@ -111,7 +111,6 @@ const AdminDashboard = () => {
     tooltip: { enabled: true },
   };
   
-  console.log(arrivals)
   const chartSeries = [
     {
       name: "Bookings",
@@ -212,7 +211,7 @@ const AdminDashboard = () => {
             <tbody>
               {latestBookings.map((b) => (
                 <tr key={b._id} className="border-b hover:bg-gray-50">
-                  <td className="px-4 py-2">{b.user?.name || "Deleted User"}</td>
+                  <td className="px-4 py-2">{b.user?.name || b.guestFirstName + ' ' + b.guestLastName}</td>
                   {/* <td className="px-4 py-2">{b.rooms.map(r => `${r.roomId?.type}-${r.roomNumber}`).join(", ")}</td> */}
                   <td className="px-4 py-3 text-gray-600 text-sm">
                     <ul className="flex flex-row md:flex-col flex-wrap gap-1 md:gap-0 w-[200px]">

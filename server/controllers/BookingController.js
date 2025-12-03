@@ -319,7 +319,7 @@ exports.deleteBooking = async (req, res) => {
 exports.getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
-      .populate('user', 'name email')
+      .populate('user', 'name email phone')
       .populate('rooms.roomId', 'type price');
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
@@ -496,8 +496,8 @@ exports.createBookingAdmin = async (req, res) => {
       return res.status(400).json({ message: "User ID is required for members" });
     }
     if (customerType === "Guest") {
-      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestPhone || !guestAddress) {
-        return res.status(400).json({ message: "Guest first name, last name, city, country, phone, and address are required for guests" });
+      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestAddress) {
+        return res.status(400).json({ message: "Guest first name, last name, city, country, and address are required for guests" });
       }
       if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
         return res.status(400).json({ message: "Invalid email format" });

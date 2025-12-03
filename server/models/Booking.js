@@ -19,7 +19,6 @@ const BookingSchema = new mongoose.Schema({
     },
     guestPhone: { 
         type: String,
-        required: function() { return this.customerType === "Guest"; } 
     },
     guestAddress: { 
         type: String,

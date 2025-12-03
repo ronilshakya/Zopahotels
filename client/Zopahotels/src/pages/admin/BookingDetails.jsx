@@ -54,42 +54,47 @@ const BookingDetails = () => {
             </div>
         </div>
 
-        <div className="space-y-4">
-          <p><strong>Booking ID:</strong> {booking.bookingId}</p>
-          <p><strong>Status:</strong> {booking.status}</p>
-          <p><strong>Check-In:</strong> {new Date(booking.checkIn).toLocaleDateString()}</p>
-          <p><strong>Check-Out:</strong> {new Date(booking.checkOut).toLocaleDateString()}</p>
-          <p><strong>Adults:</strong> {booking.adults}</p>
-          <p><strong>Children:</strong> {booking.children}</p>
-          <p><strong>Total Price:</strong> {hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</p>
-          <p><strong>Booking Source:</strong> {booking.bookingSource}</p>
-
-          {booking.customerType === "Member" ? (
-            <div>
-              <h3 className="font-semibold">Member Info</h3>
-              <p>Name: {booking.user?.name}</p>
-              <p>Email: {booking.user?.email}</p>
-              <p>Phone: {booking.user?.phone}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+                <p><strong>Booking ID:</strong> {booking.bookingId}</p>
+                <p><strong>Status:</strong> {booking.status}</p>
+                <p><strong>Check-In:</strong> {new Date(booking.checkIn).toLocaleDateString()}</p>
+                <p><strong>Check-Out:</strong> {new Date(booking.checkOut).toLocaleDateString()}</p>
+                <p><strong>Adults:</strong> {booking.adults}</p>
+                <p><strong>Children:</strong> {booking.children}</p>
+                <p><strong>Booking Source:</strong> {booking.bookingSource}</p>
+                <div>
+                    <h3 className="font-bold">Rooms</h3>
+                    <ul className="list-disc ml-6">
+                    {booking.rooms.map((r, i) => (
+                        <li key={i}>{r.roomId?.type} {'(' + r.roomNumber + ')'}</li>
+                    ))}
+                    </ul>
+                </div>
+                <p><strong>Total Price:</strong> {hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</p>
             </div>
-          ) : (
-            <div>
-              <h3 className="font-semibold">Guest Info</h3>
-              <p><b>Name:</b> {booking.guestFirstName} {booking.guestLastName}</p>
-              <p><b>Email:</b> {booking.guestEmail ? (booking.guestEmail):('N/A')}</p>
-              <p><b>Phone:</b> {booking.guestPhone}</p>
-              <p><b>Address:</b> {booking.guestAddress}, {booking.guestCity}, {booking.guestCountry} {booking.guestZipCode}</p>
-            </div>
-          )}
+            <div className="space-y-4">
 
-          <div>
-            <h3 className="font-semibold">Rooms</h3>
-            <ul className="list-disc ml-6">
-              {booking.rooms.map((r, i) => (
-                <li key={i}>{r.roomId?.type} {'(' + r.roomNumber + ')'}</li>
-              ))}
-            </ul>
-          </div>
+            {booking.customerType === "Member" ? (
+                <div className="space-y-4">
+                <h3 className="font-semibold">Member Info</h3>
+                <p>Name: {booking.user?.name}</p>
+                <p>Email: {booking.user?.email}</p>
+                <p>Phone: {booking.user?.phone}</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                <h3 className="font-semibold">Guest Info</h3>
+                <p><b>Name:</b> {booking.guestFirstName} {booking.guestLastName}</p>
+                <p><b>Email:</b> {booking.guestEmail ? (booking.guestEmail):('N/A')}</p>
+                <p><b>Phone:</b> {booking.guestPhone ? (booking.guestPhone):('N/A')}</p>
+                <p><b>Address:</b> {booking.guestAddress}, {booking.guestCity}, {booking.guestCountry} {booking.guestZipCode}</p>
+                </div>
+            )}
+
+            </div>
         </div>
+
 
         
       </div>

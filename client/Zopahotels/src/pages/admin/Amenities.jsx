@@ -99,7 +99,6 @@ const handleEdit = (index) => {
       }
     }
   };
-  console.log(amenities);
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
