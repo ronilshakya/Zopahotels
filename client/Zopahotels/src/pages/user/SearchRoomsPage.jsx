@@ -29,6 +29,7 @@ const SearchRoomsPage = () => {
   const [availableRoomCounts, setAvailableRoomCounts] = useState({}); // Track available counts per roomId
   const [imgLoaded, setImgLoaded] = React.useState(false);
   const {hotel} = useHotel();
+  const [roomOccupancy, setRoomOccupancy] = useState({}); 
 
   // -------------------------------
   // Fetch rooms with images + available room counts
@@ -39,7 +40,7 @@ const SearchRoomsPage = () => {
       const result = await searchAvailableRooms(filters);
 
       const roomsWithImages = await Promise.all(
-  result.availableRooms.map(async (room) => {
+      result.availableRooms.map(async (room) => {
     try {
       const roomDetails = await getRoomById(room.roomId);
 
@@ -72,7 +73,9 @@ const SearchRoomsPage = () => {
         ...room, 
         image: roomDetails.images?.[0] || null,
         availableRoomNumbers: finalAvailableRoomNumbers,
+        pricing: roomDetails.pricing || []   // ✅ ensure pricing is present
       };
+
     } catch {
       return null;
     }
@@ -114,30 +117,37 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
 
 
   const handleBookSelectedRooms = () => {
-  const selectedRooms = availableRooms
-    .filter(room => numRooms[room.roomId])
-    .map(room => ({
+ const selectedRooms = availableRooms.flatMap(room => {
+  const occupancies = Array.isArray(roomOccupancy[room.roomId]) ? roomOccupancy[room.roomId] : [];
+  return occupancies.map(occ => {
+    const adultsCount = occ?.adults ?? form.adults;
+    const childrenCount = occ?.children ?? 0;
+    const pricingEntry = room.pricing.find(p => p.adults === adultsCount);
+
+    return {
       roomId: room.roomId,
-      roomNumber: room.roomNumber,
-      quantity: numRooms[room.roomId],
-      pricePerNight: room.pricePerNight, // ✅ add this
-      totalPrice: room.pricePerNight * numRooms[room.roomId] * 
-                  Math.ceil((new Date(form.checkOut) - new Date(form.checkIn)) / (1000 * 60 * 60 * 24)),
+      adults: adultsCount,
+      children: childrenCount,
+      pricePerNight: pricingEntry?.price || 0,
+      totalPrice: (pricingEntry?.price || 0) * room.nights,
       type: room.type
-    }));
+    };
+  });
+});
+
+
 
   if (!selectedRooms.length) return;
 
   // Redirect to checkout page, passing the data via state
   navigate("/checkout", {
     state: {
-      selectedRooms,
+      selectedRooms,        // already contains per-room adults/children
       checkIn: form.checkIn,
-      checkOut: form.checkOut,
-      adults: form.adults,
-      children: form.children
+      checkOut: form.checkOut
     }
   });
+
 };
 
 
@@ -255,60 +265,166 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
                   </h3>
 
                   <p className="text-gray-600">
-                    Max: {room.maxAdults} Adults, {room.maxChildren} Children
+                    Max: {room.maxAdults} Adults, Children - {room.children}
                   </p>
 
                   <p className="text-gray-600">{room.nights} night(s)</p>
 
                   {/* Number of Rooms Dropdown per room */}
                  {room.availableRoomNumbers.length > 0 && (
-  <div className="mt-4">
+                    <div className="mt-4">
+                      <select
+                        value={numRooms[room.roomId] || ""}
+                        onChange={(e) => {
+                          const value = e.target.value === "" ? undefined : Number(e.target.value);
+                          setNumRooms((prev) => ({ ...prev, [room.roomId]: value }));
+
+                          setRoomOccupancy((prev) => {
+                            if (!value) {
+                              // Clear occupancy when quantity cleared
+                              const { [room.roomId]: _, ...rest } = prev;
+                              return rest;
+                            }
+                            const existing = Array.isArray(prev[room.roomId]) ? prev[room.roomId] : [];
+                            const next = Array.from({ length: value }, (_, i) => ({
+                              adults: existing[i]?.adults ?? form.adults,
+                              children: existing[i]?.children ?? 0,
+                            }));
+                            return { ...prev, [room.roomId]: next };
+                          });
+                        }}
+                        className="border border-gray-300 rounded px-3 py-2"
+                      >
+                        <option value="">Number of Rooms</option>
+                        {room.availableRoomNumbers.map((num, i) => (
+                          <option key={i} value={i + 1}>{i + 1}</option>
+                        ))}
+                      </select>
+
+                    </div>
+                  )}
+
+                  {/* Adults per room */}
+{Array.from({ length: numRooms[room.roomId] || 0 }).map((_, idx) => (
+  <div key={idx} className="mt-2">
+       <label className="block text-sm font-medium text-gray-700">
+  Adults for Room {idx + 1}
+</label>
+<select
+  value={roomOccupancy[room.roomId]?.[idx]?.adults || ""}
+  onChange={(e) => {
+    const value = Number(e.target.value);
+    setRoomOccupancy(prev => {
+      const arr = Array.isArray(prev[room.roomId]) ? [...prev[room.roomId]] : [];
+      arr[idx] = { ...(arr[idx] || {}), adults: value };
+      return { ...prev, [room.roomId]: arr };
+    });
+  }}
+  className="border border-gray-300 rounded px-3 py-2"
+>
+  <option value="">Select Adults</option>
+  {room.pricing.map(p => (
+    <option key={p.adults} value={p.adults}>
+      {p.adults} Adult{p.adults > 1 ? "s" : ""} – ${p.price}/night
+    </option>
+  ))}
+</select>
+
+
+
+    {room.maxChildren > 0 && (
+  <>
+    <label className="block text-sm font-medium text-gray-700 mt-2">
+      Children for Room {idx + 1}
+    </label>
     <select
-      value={numRooms[room.roomId] || ""}
+      value={roomOccupancy[room.roomId]?.[idx]?.children || 0}
       onChange={(e) => {
-        const value = e.target.value === "" ? undefined : Number(e.target.value);
-        setNumRooms((prev) => ({ ...prev, [room.roomId]: value }));
+        const value = Number(e.target.value);
+        setRoomOccupancy(prev => {
+          const arr = Array.isArray(prev[room.roomId]) ? [...prev[room.roomId]] : [];
+          arr[idx] = { ...(arr[idx] || {}), children: value };
+          return { ...prev, [room.roomId]: arr };
+        });
       }}
       className="border border-gray-300 rounded px-3 py-2"
     >
-      <option value="">Number of Rooms</option>
-      {room.availableRoomNumbers.map((num, i) => (
-        <option key={i} value={i + 1}>
-          {i + 1}
-        </option>
+      <option value="">Select Children</option>
+      {[...Array(room.maxChildren + 1).keys()].map(n => (
+        <option key={n} value={n}>{n}</option>
       ))}
     </select>
-  </div>
+  </>
 )}
+
+  </div>
+))}
+
 
 
 
                   <div className="flex justify-between items-center mt-4">
-                    <span className="text-lg font-bold text-blue-600">${room.totalPrice  * (numRooms[room.roomId] || 1)}</span>
+              {(() => {
+  const raw = roomOccupancy[room.roomId];
+  const occupancies = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
-                    <span
-                      className="text-blue-600 font-semibold underline cursor-pointer"
-                      onClick={() => viewRoomModal(room)}
-                    >
-                      View Details
-                    </span>
-                  </div>
+  const totalPrice = occupancies.reduce((sum, occ) => {
+    const adultsCount = occ?.adults ?? form.adults;
+    const pricingEntry = Array.isArray(room.pricing)
+      ? room.pricing.find(p => p.adults === adultsCount)
+      : null;
+
+    return sum + (pricingEntry?.price || 0) * room.nights;
+  }, 0);
+
+  return (
+    <>
+      <span className="text-lg font-bold text-blue-600">${totalPrice}</span>
+      <span
+        className="text-blue-600 font-semibold underline cursor-pointer"
+        onClick={() => viewRoomModal(room)}
+      >
+        View Details
+      </span>
+    </>
+  );
+})()}
+
+
+
+            </div>
+
                 </div>
               </div>
             )})}
           </div>
         )}
-
+        
         {/* Global Book Now Section */}
         {Object.values(numRooms).some(n => typeof n === "number" && n > 0) && (
           <div className="fixed bottom-0 left-0 right-0 bg-blue-100 shadow-lg px-4 py-2 flex justify-between items-center max-w-5xl mx-auto rounded-lg">
             <span className="text-xl font-bold">
               Total: $
               {availableRooms.reduce((acc, room) => {
-                const count = numRooms[room.roomId] || 0;
-                return acc + room.totalPrice * count;
-              }, 0)}
+  const raw = roomOccupancy[room.roomId];
+  const occupancies = Array.isArray(raw) ? raw : raw ? [raw] : [];
+
+  const subtotal = occupancies.reduce((sum, occ) => {
+    const adultsCount = occ?.adults ?? form.adults;
+    const pricingEntry = Array.isArray(room.pricing)
+      ? room.pricing.find(p => p.adults === adultsCount)
+      : null;
+
+    return sum + (pricingEntry?.price || 0) * room.nights;
+  }, 0);
+
+  return acc + subtotal;
+}, 0)}
+
+
+
             </span>
+
             <button
               onClick={handleBookSelectedRooms}
               className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded-md"

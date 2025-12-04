@@ -144,8 +144,6 @@ const AllBookings = () => {
                   <th className="px-4 py-3 text-left font-semibold text-sm">Room(s)</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Check-In</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Check-Out</th>
-                  <th className="px-4 py-3 text-left font-semibold text-sm">Adults</th>
-                  <th className="px-4 py-3 text-left font-semibold text-sm">Children</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Total Price</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Status</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Actions</th>
@@ -180,8 +178,6 @@ const AllBookings = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkIn).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkOut).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-gray-600 text-sm">{booking.adults}</td>
-                    <td className="px-4 py-3 text-gray-600 text-sm">{booking.children}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{booking.status}</td>
                     <td className="px-4 py-3">

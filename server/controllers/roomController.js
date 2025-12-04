@@ -5,11 +5,12 @@ const path = require("path");
 
 exports.createRoom = async (req, res) => {
   try {
-    let { type, description, price, adults, children, rooms, maxOccupancy, amenities } = req.body;
+    let { type, description, pricing, children, rooms, maxOccupancy, amenities } = req.body;
 
     // Parse JSON strings if needed (FormData sends arrays as strings)
     rooms = typeof rooms === "string" ? JSON.parse(rooms) : rooms;
     amenities = typeof amenities === "string" ? JSON.parse(amenities) : amenities;
+    pricing = typeof pricing === "string" ? JSON.parse(pricing) : pricing;
 
     // Map uploaded files to images array
     const images = req.files ? req.files.map(file => file.filename) : [];
@@ -27,11 +28,20 @@ exports.createRoom = async (req, res) => {
       return res.status(400).json({ message: `Room number(s) already exist in another room type` });
     }
 
+    // Validate pricing array
+    if (!Array.isArray(pricing) || pricing.length === 0) {
+      return res.status(400).json({ message: "Pricing must be a non-empty array" });
+    }
+    for (const p of pricing) {
+      if (typeof p.adults !== "number" || typeof p.price !== "number") {
+        return res.status(400).json({ message: "Each pricing entry must have numeric adults and price" });
+      }
+    }
+
     const newRoom = new Room({
       type,
       description,
-      price,
-      adults,
+      pricing,
       children,
       rooms,
       maxOccupancy,
@@ -119,12 +129,32 @@ exports.updateRoom = async (req, res) => {
       selectedAmenityIds.includes(a._id.toString())
     );
 
-    // Allowed fields to update
+    // Parse pricing if sent as string
+    if (req.body.pricing && typeof req.body.pricing === "string") {
+      try {
+        req.body.pricing = JSON.parse(req.body.pricing);
+      } catch {
+        return res.status(400).json({ message: "Invalid pricing format" });
+      }
+    }
+
+    // Validate pricing array if provided
+    if (req.body.pricing) {
+      if (!Array.isArray(req.body.pricing) || req.body.pricing.length === 0) {
+        return res.status(400).json({ message: "Pricing must be a non-empty array" });
+      }
+      for (const p of req.body.pricing) {
+        if (typeof p.adults !== "number" || typeof p.price !== "number") {
+          return res.status(400).json({ message: "Each pricing entry must have numeric adults and price" });
+        }
+      }
+    }
+
+    // Allowed fields to update (removed price/adults, added pricing)
     const allowedUpdates = [
       "type",
       "description",
-      "price",
-      "adults",
+      "pricing",
       "children",
       "rooms",
       "maxOccupancy"
@@ -159,6 +189,7 @@ exports.updateRoom = async (req, res) => {
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 };
+
 
 
 

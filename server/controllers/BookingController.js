@@ -6,14 +6,28 @@ const { v4: uuidv4 } = require("uuid");
 
 exports.createBooking = async (req, res) => {
   try {
-    const { customerType, guestFirstName, guestLastName, guestEmail,guestCity,guestZipCode,guestCountry, guestPhone, guestAddress, rooms, checkIn, checkOut, adults, children } = req.body;
+    const { 
+      customerType, 
+      guestFirstName, 
+      guestLastName, 
+      guestEmail,
+      guestCity,
+      guestZipCode,
+      guestCountry, 
+      guestPhone, 
+      guestAddress, 
+      rooms, 
+      checkIn, 
+      checkOut,
+      children
+    } = req.body;
+
     let userId = null;
 
     if (!customerType || !["Member", "Guest"].includes(customerType)) {
       return res.status(400).json({ message: "Invalid customer type" });
     }
 
-    // For members, userId must come from authenticated user
     if (customerType === "Member") {
       if (!req.user || !req.user.id) {
         return res.status(401).json({ message: "User authentication required for member bookings" });
@@ -21,10 +35,9 @@ exports.createBooking = async (req, res) => {
       userId = req.user.id;
     }
 
-    // For guests, guest info is required
     if (customerType === "Guest") {
-      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestPhone || !guestAddress) {
-        return res.status(400).json({ message: "Guest name, city, country, phone, and address are required" });
+      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestAddress) {
+        return res.status(400).json({ message: "Guest name, city, country, and address are required" });
       }
       if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
         return res.status(400).json({ message: "Invalid email format" });
@@ -53,18 +66,35 @@ exports.createBooking = async (req, res) => {
     let totalPrice = 0;
     const bookingRooms = [];
 
-    // Loop through each selected room type
     for (const r of rooms) {
       const roomDoc = await Room.findById(r.roomId);
       if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
 
-      const quantity = r.quantity || 1;
+      const quantity = Number(r.quantity || 1);
 
-      if (adults > roomDoc.adults * quantity || children > roomDoc.children * quantity) {
-        return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
+      // Capacity check
+      // if ((r.adults + children) > roomDoc.maxOccupancy * quantity) {
+      //   return res.status(400).json({
+      //     message: `Room ${roomDoc.type} cannot accommodate ${r.adults} adults and ${children} children`
+      //   });
+      // }
+
+      if (r.adults > roomDoc.adults || r.children > roomDoc.children) {
+        return res.status(400).json({
+          message: `Room ${roomDoc.type} cannot accommodate ${r.adults} adults and ${r.children} children`
+        });
       }
 
-      totalPrice += roomDoc.price * nights * quantity;
+
+      // Pricing lookup
+      const pricingEntry = roomDoc.pricing.find(p => p.adults === r.adults);
+      if (!pricingEntry) {
+        return res.status(400).json({
+          message: `No pricing defined for ${r.adults} adults in room type ${roomDoc.type}`
+        });
+      }
+
+      totalPrice += pricingEntry.price * nights * quantity;
 
       for (let i = 0; i < quantity; i++) {
         bookingRooms.push({
@@ -79,24 +109,24 @@ exports.createBooking = async (req, res) => {
       rooms: bookingRooms,
       checkIn,
       checkOut,
-      adults,
-      children,
       totalPrice,
       status: "pending",
-      numberOfRooms: rooms.reduce((sum, r) => sum + (r.quantity || 1), 0),
+      numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
       bookingId: uuidv4().slice(0, 8)
     };
 
     if (customerType === "Member") bookingData.user = userId;
     if (customerType === "Guest") {
-      bookingData.guestFirstName = guestFirstName;
-      bookingData.guestLastName = guestLastName;
-      bookingData.guestEmail = guestEmail;
-      bookingData.guestCity = guestCity;
-      bookingData.guestZipCode = guestZipCode;
-      bookingData.guestCountry = guestCountry;
-      bookingData.guestPhone = guestPhone;
-      bookingData.guestAddress = guestAddress;
+      Object.assign(bookingData, {
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        guestCity,
+        guestZipCode,
+        guestCountry,
+        guestPhone,
+        guestAddress
+      });
     }
 
     const booking = await Booking.create(bookingData);
@@ -108,6 +138,166 @@ exports.createBooking = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.createBookingAdmin = async (req, res) => {
+  try {
+    const { 
+      customerType, 
+      userId, 
+      guestFirstName, 
+      guestLastName, 
+      guestEmail, 
+      guestPhone, 
+      guestAddress, 
+      guestCity, 
+      guestZipCode, 
+      guestCountry, 
+      rooms,   // now each room should include adults/children
+      checkIn, 
+      checkOut, 
+      bookingSource 
+    } = req.body;
+
+    // Validate customer type
+    if (!customerType || !["Member", "Guest"].includes(customerType)) {
+      return res.status(400).json({ message: "Customer type must be Member or Guest" });
+    }
+
+    // Validate user/guest info
+    if (customerType === "Member" && !userId) {
+      return res.status(400).json({ message: "User ID is required for members" });
+    }
+    if (customerType === "Guest") {
+      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestAddress) {
+        return res.status(400).json({ message: "Guest first name, last name, city, country, and address are required for guests" });
+      }
+      if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      let existingMember = null;
+      if (guestEmail || guestPhone) {
+        const conditions = [];
+        if (guestEmail) conditions.push({ email: guestEmail });
+        if (guestPhone) conditions.push({ phone: guestPhone });
+        existingMember = await User.findOne({ $or: conditions });
+      }
+      if (existingMember) {
+        return res.status(400).json({ message: "Guest email or phone matches an existing member account" });
+      }
+    }
+
+    if (!rooms || rooms.length === 0) {
+      return res.status(400).json({ message: "At least one room type must be selected" });
+    }
+
+    const checkInDate = new Date(checkIn);
+    const checkOutDate = new Date(checkOut);
+    const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+
+    if (timeDiff <= 0) {
+      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (checkInDate < today) {
+      return res.status(400).json({ message: "Check-in date cannot be in the past" });
+    }
+
+    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    let totalPrice = 0;
+    const bookingRooms = [];
+
+    for (const r of rooms) {
+  const roomDoc = await Room.findById(r.roomId);
+  if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
+
+  const quantity = Number(r.quantity || 1);
+  const adults = Number(r.adults || 1);
+  const children = Number(r.children || 0);
+
+  // Capacity check per room
+  // if (adults + children > roomDoc.maxOccupancy) {
+  //   return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
+  // }
+
+  if (r.adults > roomDoc.adults || r.children > roomDoc.children) {
+    return res.status(400).json({
+      message: `Room ${roomDoc.type} cannot accommodate ${r.adults} adults and ${r.children} children`
+    });
+  }
+
+  // Pricing lookup per room
+  const pricingEntry = roomDoc.pricing.find(p => p.adults === adults);
+  if (!pricingEntry) {
+    return res.status(400).json({ message: `No pricing defined for ${adults} adults in room type ${roomDoc.type}` });
+  }
+
+  totalPrice += pricingEntry.price * nights * quantity;
+
+  // Check for duplicate room numbers in the booking payload
+const assignedNumbers = new Set();
+for (const r of bookingRooms) {
+  const key = `${r.roomId}_${r.roomNumber}`;
+  if (assignedNumbers.has(key)) {
+    return res.status(400).json({
+      message: `Room number ${r.roomNumber} of type ${r.roomId} is already assigned in this booking`
+    });
+  }
+  assignedNumbers.add(key);
+}
+
+
+  // Expand into multiple bookingRooms entries
+  for (let i = 0; i < quantity; i++) {
+    bookingRooms.push({
+      roomId: r.roomId,
+      roomNumber: "Yet to be assigned",
+      adults,
+      children
+    });
+  }
+}
+
+
+    const bookingPayload = {
+      customerType,
+      rooms: bookingRooms,
+      checkIn,
+      checkOut,
+      totalPrice,
+      status: "pending",
+      numberOfRooms: rooms.length,
+      bookingId: uuidv4().slice(0, 8),
+      bookingSource
+    };
+
+    if (customerType === "Member") {
+      bookingPayload.user = userId;
+    } else {
+      Object.assign(bookingPayload, {
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        guestCity,
+        guestZipCode,
+        guestCountry,
+        guestPhone,
+        guestAddress
+      });
+    }
+
+    const booking = await Booking.create(bookingPayload);
+    res.status(201).json({ message: "Booking created by admin", booking });
+
+  } catch (error) {
+    console.error("Admin createBooking error:", error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
 
 
 exports.getMyBookings = async (req, res) => {
@@ -149,42 +339,53 @@ exports.getAvailableRooms = async (req, res) => {
     const availableRooms = [];
 
     for (const room of rooms) {
-      if (room.adults >= parseInt(adults || 0) && room.children >= parseInt(children || 0)) {
-        // Check for **each room number** of this type
-        const freeRoomNumbers = [];
+      const freeRoomNumbers = [];
 
-        for (const r of room.rooms) {
-          const conflictingBooking = await Booking.findOne({
-            "rooms.roomId": room._id,
-            "rooms.roomNumber": r.roomNumber,
-            status: { $in: ["pending", "confirmed"] },
-            $or: [
-              { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
-              { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
-              { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } }
-            ]
-          }).lean();
+      for (const r of room.rooms) {
+        const conflictingBooking = await Booking.findOne({
+          "rooms.roomId": room._id,
+          "rooms.roomNumber": r.roomNumber,
+          status: { $in: ["pending", "confirmed"] },
+          $or: [
+            { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
+            { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
+            { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } }
+          ]
+        }).lean();
 
-          if (!conflictingBooking) {
-            freeRoomNumbers.push(r.roomNumber);
+        if (!conflictingBooking) {
+          // ✅ Use per-room adults/children instead of global
+          const adultsCount = parseInt(adults, 10) || 1;
+          const childrenCount = parseInt(children, 10) || 0;
+
+          // if (adultsCount + childrenCount <= room.maxOccupancy) {
+          if (childrenCount <= room.children) {
+            const pricingEntry = room.pricing.find(p => p.adults === adultsCount);
+            if (pricingEntry) {
+              freeRoomNumbers.push({
+                roomNumber: r.roomNumber,
+                adults: adultsCount,
+                children: childrenCount,
+                pricePerNight: pricingEntry.price,
+                totalPrice: pricingEntry.price * nights
+              });
+            }
           }
         }
+      }
 
-        if (freeRoomNumbers.length > 0) {
-          availableRooms.push({
-            roomId: room._id,
-            type: room.type,
-            pricePerNight: room.price,
-            totalPrice: room.price * nights,
-            nights,
-            maxAdults: room.adults,
-            maxChildren: room.children,
-            maxOccupancy: room.maxOccupancy,
-            availableRoomNumbers: freeRoomNumbers, // ✅ list of free numbers
-          });
-        }
+      if (freeRoomNumbers.length > 0) {
+        availableRooms.push({
+          roomId: room._id,
+          type: room.type,
+          nights,
+          maxOccupancy: room.maxOccupancy,
+          children: room.children,
+          availableRoomNumbers: freeRoomNumbers
+        });
       }
     }
+
 
     res.json({
       checkIn,
@@ -195,6 +396,7 @@ exports.getAvailableRooms = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Error in getAvailableRooms:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -209,8 +411,7 @@ exports.updateBooking = async (req, res) => {
       return res.status(404).json({ message: "Booking not found" });
     }
 
-
-    let allowedFields = ["rooms", "checkIn", "checkOut", "status", "adults", "children","bookingSource"];
+    let allowedFields = ["rooms", "checkIn", "checkOut", "status", "bookingSource"];
     if (booking.customerType === "Guest") {
       allowedFields = allowedFields.concat([
         "guestFirstName",
@@ -225,13 +426,13 @@ exports.updateBooking = async (req, res) => {
     }
 
     const updates = {};
-
     allowedFields.forEach((key) => {
       if (req.body[key] !== undefined) {
         updates[key] = req.body[key];
       }
     });
 
+    // Guest validation
     if (booking.customerType === "Guest") {
       if (updates.guestEmail || updates.guestPhone) {
         const conflictMember = await User.findOne({
@@ -240,7 +441,6 @@ exports.updateBooking = async (req, res) => {
             updates.guestPhone ? { phone: updates.guestPhone } : null
           ].filter(Boolean)
         });
-
         if (conflictMember) {
           return res.status(400).json({
             message: "Guest email or phone cannot match an existing member account"
@@ -249,7 +449,8 @@ exports.updateBooking = async (req, res) => {
       }
     }
 
-    if (updates.checkIn || updates.checkOut || updates.rooms || updates.adults || updates.children) {
+    // If dates/rooms changed, recalc totalPrice
+    if (updates.checkIn || updates.checkOut || updates.rooms) {
       const checkInDate = new Date(updates.checkIn || booking.checkIn);
       const checkOutDate = new Date(updates.checkOut || booking.checkOut);
       const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
@@ -265,7 +466,11 @@ exports.updateBooking = async (req, res) => {
         const roomDoc = await Room.findById(r.roomId);
         if (!roomDoc) return res.status(404).json({ message: `Room with ID ${r.roomId} not found` });
 
-        // Only check availability if admin assigned a room number
+        const adultsCount = Number(r.adults || 1);
+        const childrenCount = Number(r.children || 0);
+        const quantity = Number(r.quantity || 1);
+
+        // Availability check if room number assigned
         if (r.roomNumber && r.roomNumber !== "Yet to be assigned") {
           const roomNumberExists = roomDoc.rooms.find(room => room.roomNumber === r.roomNumber);
           if (!roomNumberExists) {
@@ -285,10 +490,26 @@ exports.updateBooking = async (req, res) => {
           }
         }
 
-        totalPrice += roomDoc.price * nights;
+        // Capacity check per room
+        if (adultsCount + childrenCount > roomDoc.maxOccupancy) {
+          return res.status(400).json({
+            message: `Room ${roomDoc.type} cannot accommodate ${adultsCount} adults and ${childrenCount} children`
+          });
+        }
+
+        // Pricing lookup per room
+        const pricingEntry = roomDoc.pricing.find(p => p.adults === adultsCount);
+        if (!pricingEntry) {
+          return res.status(400).json({
+            message: `No pricing defined for ${adultsCount} adults in room type ${roomDoc.type}`
+          });
+        }
+
+        totalPrice += pricingEntry.price * nights * quantity;
       }
 
       updates.totalPrice = totalPrice;
+      updates.numberOfRooms = roomsToUpdate.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0);
     }
 
     Object.assign(booking, updates);
@@ -296,10 +517,12 @@ exports.updateBooking = async (req, res) => {
 
     res.json({ message: "Booking updated", booking });
   } catch (error) {
-    console.error('Error in updateBooking:', error.message);
+    console.error("Error in updateBooking:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
+
+
 
 exports.deleteBooking = async (req, res) => {
   try {
@@ -464,133 +687,6 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
   }
 };
 
-
-exports.createBookingAdmin = async (req, res) => {
-  try {
-    const { 
-      customerType, 
-      userId, 
-      guestFirstName, 
-      guestLastName, 
-      guestEmail, 
-      guestPhone, 
-      guestAddress, 
-      guestCity, 
-      guestZipCode, 
-      guestCountry, 
-      rooms, 
-      checkIn, 
-      checkOut, 
-      adults, 
-      children, 
-      bookingSource 
-    } = req.body;
-
-    // Validate customer type
-    if (!customerType || !["Member", "Guest"].includes(customerType)) {
-      return res.status(400).json({ message: "Customer type must be Member or Guest" });
-    }
-
-    // Validate user/guest info
-    if (customerType === "Member" && !userId) {
-      return res.status(400).json({ message: "User ID is required for members" });
-    }
-    if (customerType === "Guest") {
-      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestAddress) {
-        return res.status(400).json({ message: "Guest first name, last name, city, country, and address are required for guests" });
-      }
-      if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
-        return res.status(400).json({ message: "Invalid email format" });
-      }
-
-      const existingMember = await User.findOne({
-          $or: [
-            guestEmail ? { email: guestEmail } : null,
-            { phone: guestPhone }
-          ].filter(Boolean)
-        });
-        if (existingMember) {
-          return res.status(400).json({ message: "Guest email or phone matches an existing member account" });
-        }
-    }
-
-    if (!rooms || rooms.length === 0) {
-      return res.status(400).json({ message: "At least one room type must be selected" });
-    }
-
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
-    const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
-
-    if (timeDiff <= 0) {
-      return res.status(400).json({ message: "Check-out date must be after check-in date" });
-    }
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (checkInDate < today) {
-      return res.status(400).json({ message: "Check-in date cannot be in the past" });
-    }
-
-    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-    let totalPrice = 0;
-    const bookingRooms = [];
-
-    for (const r of rooms) {
-      const roomDoc = await Room.findById(r.roomId);
-      if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
-
-      const quantity = Number(r.quantity || 1);
-
-      if (adults > roomDoc.adults * quantity || children > roomDoc.children * quantity) {
-        return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
-      }
-
-      totalPrice += Number(roomDoc.price || 0) * nights * quantity;
-
-      for (let i = 0; i < quantity; i++) {
-        bookingRooms.push({
-          roomId: r.roomId,
-          roomNumber: "Yet to be assigned",
-        });
-      }
-    }
-
-    const bookingPayload = {
-      customerType,
-      rooms: bookingRooms,
-      checkIn,
-      checkOut,
-      adults,
-      children,
-      totalPrice,
-      status: "pending",
-      numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
-      bookingId: uuidv4().slice(0, 8),
-      bookingSource
-    };
-
-    if (customerType === "Member") {
-      bookingPayload.user = userId;
-    } else {
-      bookingPayload.guestFirstName = guestFirstName;
-      bookingPayload.guestLastName = guestLastName;
-      bookingPayload.guestEmail = guestEmail;
-      bookingPayload.guestCity = guestCity;
-      bookingPayload.guestZipCode = guestZipCode;
-      bookingPayload.guestCountry = guestCountry;
-      bookingPayload.guestPhone = guestPhone;
-      bookingPayload.guestAddress = guestAddress;
-    }
-
-    const booking = await Booking.create(bookingPayload);
-
-    res.status(201).json({ message: "Booking created by admin", booking });
-  } catch (error) {
-    console.error("Admin createBooking error:", error.message);
-    res.status(500).json({ message: error.message });
-  }
-};
 
 
 

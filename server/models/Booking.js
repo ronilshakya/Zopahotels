@@ -52,7 +52,17 @@ const BookingSchema = new mongoose.Schema({
             roomNumber: {
                 type: String,
                 required: true
-            }
+            },
+            adults: {
+                type: Number,
+                required: true,
+                default: 1
+            },
+            children: {
+                type: Number,
+                required: true,
+                default: 0
+            },
         }
     ],
 
@@ -63,16 +73,6 @@ const BookingSchema = new mongoose.Schema({
     checkOut: {
         type: Date,
         required: true
-    },
-    adults: {
-        type: Number,
-        required: true,
-        default: 1
-    },
-    children: {
-        type: Number,
-        required: true,
-        default: 0
     },
     totalPrice: {
         type: Number,

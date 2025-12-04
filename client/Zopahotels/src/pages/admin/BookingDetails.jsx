@@ -42,6 +42,7 @@ const BookingDetails = () => {
     return <p className="text-center text-red-500">Booking not found.</p>;
   }
 
+
   return (
     <div className="min-h-screen bg-gray-100 p-6 printable">
       <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-lg p-6">
@@ -60,14 +61,12 @@ const BookingDetails = () => {
                 <p><strong>Status:</strong> {booking.status}</p>
                 <p><strong>Check-In:</strong> {new Date(booking.checkIn).toLocaleDateString()}</p>
                 <p><strong>Check-Out:</strong> {new Date(booking.checkOut).toLocaleDateString()}</p>
-                <p><strong>Adults:</strong> {booking.adults}</p>
-                <p><strong>Children:</strong> {booking.children}</p>
                 <p><strong>Booking Source:</strong> {booking.bookingSource}</p>
                 <div>
                     <h3 className="font-bold">Rooms</h3>
                     <ul className="list-disc ml-6">
                     {booking.rooms.map((r, i) => (
-                        <li key={i}>{r.roomId?.type} {'(' + r.roomNumber + ')'}</li>
+                        <li key={i}>{r.roomId?.type} {'(' + r.roomNumber + ')'}, Adults: {r.adults}, Children: {r.children}</li>
                     ))}
                     </ul>
                 </div>

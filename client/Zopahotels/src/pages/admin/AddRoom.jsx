@@ -11,8 +11,7 @@ const AddRoom = () => {
   const [form, setForm] = useState({
     type: "",
     description: "",
-    price: "",
-    adults: 1,
+    pricings: [{ adults: 1, price: "" }],
     children: 0,
     maxOccupancy: 1,
     amenities: [],
@@ -29,6 +28,30 @@ const AddRoom = () => {
       setForm(prev => ({ ...prev, amenities: [] })); // start with none selected
     }
   }, [hotel]);
+
+  // Handle change for pricing entries
+const handlePricingChange = (index, field, value) => {
+  const updated = [...form.pricings];
+  updated[index][field] = value;
+  setForm({ ...form, pricings: updated });
+};
+
+// Add/remove pricing rows
+const addPricingRow = () => {
+  const lastAdults = form.pricings.length > 0 
+    ? form.pricings[form.pricings.length - 1].adults 
+    : 0;
+
+  setForm({
+    ...form,
+    pricings: [...form.pricings, { adults: lastAdults + 1, price: "" }]
+  });
+};
+
+const removePricingRow = (index) => {
+  const updated = form.pricings.filter((_, i) => i !== index);
+  setForm({ ...form, pricings: updated });
+};
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
@@ -59,12 +82,11 @@ const AddRoom = () => {
       const formData = new FormData();
       formData.append("type", form.type);
       formData.append("description", form.description);
-      formData.append("price", form.price);
-      formData.append("adults", form.adults);
       formData.append("children", form.children);
       formData.append("maxOccupancy", form.maxOccupancy);
       formData.append("amenities", JSON.stringify(form.amenities));
       formData.append("rooms", JSON.stringify(form.rooms));
+      formData.append("pricing", JSON.stringify(form.pricings));
 
       Array.from(form.images).forEach(file => formData.append("images", file));
 
@@ -80,13 +102,12 @@ const AddRoom = () => {
       setForm({
         type: "",
         description: "",
-        price: "",
-        adults: 1,
         children: 0,
         maxOccupancy: 1,
         amenities: [],
         rooms: [{ roomNumber: "" }],
         images: [],
+        pricings: [{ adults: 1, price: "" }]
       });
 
     } catch (error) {
@@ -141,33 +162,64 @@ const AddRoom = () => {
             />
           </div>
 
-          {/* Price */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price per Night</label>
-            <input
-              type="number"
-              name="price"
-              value={form.price}
-              onChange={handleChange}
-              min="0"
-              required
-              className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
+          {/* Pricing by Adults */}
+<div className="mt-6">
+  <label className="block text-sm font-medium text-gray-700 mb-2">Pricing (per number of adults)</label>
+  {form.pricings.map((pricing, index) => (
+    <div key={index} className="flex gap-2 mb-2">
+      <input
+        type="number"
+        value={pricing.adults}
+        min="1"
+        step="1"
+         onChange={(e) => {
+          const val = e.target.value;
+          handlePricingChange(
+            index,
+            "adults",
+            val === "" ? 1 : Math.max(1, parseInt(val, 10))
+          );
+        }}
+        className="w-1/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+        placeholder="Adults"
+        required
+      />
+      <input
+        type="text"
+        value={pricing.price}
+        onChange={(e) => {
+          const val = e.target.value;
+          const num = val === "" ? 0 : Number(val);
+          handlePricingChange(index, "price", num);
+        }}
+        className="w-2/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+        placeholder="Price"
+        required
+      />
+
+      <button
+        type="button"
+        onClick={() => removePricingRow(index)}
+        className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+        disabled={form.pricings.length === 1}
+      >
+        X
+      </button>
+    </div>
+  ))}
+  <button
+    type="button"
+    onClick={addPricingRow}
+    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+  >
+    + Add Pricing
+  </button>
+</div>
+
 
           {/* Guests & Occupancy */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Adults</label>
-              <input
-                type="number"
-                name="adults"
-                value={form.adults}
-                onChange={handleChange}
-                min="1"
-                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Children</label>
               <input

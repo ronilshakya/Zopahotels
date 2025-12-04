@@ -43,6 +43,7 @@ const Rooms = () => {
       </div>
     );
   }
+  console.log(rooms)
 
   return (
     <div className="bg-gray-100">
@@ -78,7 +79,10 @@ const Rooms = () => {
             <div className="p-4">
               <h2 className="text-xl font-semibold text-gray-800">{room.type}</h2>
               <p className="text-gray-700 font-medium mb-4">
-                {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {room.price ?? room.pricePerNight} / night
+                {room.pricing.map((p)=> (
+                  <p>{p.adults} Adults - {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")}{p.price}/ night</p>
+                  
+                ))}
                 </p>
               <button
                 onClick={() => navigate(`/room/${room._id}`)}

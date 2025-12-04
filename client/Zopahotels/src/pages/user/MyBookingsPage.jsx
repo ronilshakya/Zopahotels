@@ -82,6 +82,7 @@ const MyBookingsPage = () => {
       (new Date(booking.checkOut) - new Date(booking.checkIn)) / (1000 * 60 * 60 * 24)
     );
 
+    console.log(booking)
     return (
       <div
         key={booking._id}
@@ -124,14 +125,6 @@ const MyBookingsPage = () => {
 
         <hr className="h-px bg-gray-200 border-0"></hr>
 
-        <p className="text-gray-700 text-sm py-4"><strong>Adults:</strong> {booking.adults}</p>
-
-        <hr className="h-px bg-gray-200 border-0"></hr>
-
-        <p className="text-gray-700 text-sm py-4"><strong>Children:</strong> {booking.children}</p>
-
-        <hr className="h-px bg-gray-200 border-0"></hr>
-
         <p className="text-gray-700 text-sm py-4"><strong>Total Price:</strong> {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {booking.totalPrice}</p>
         
         <hr className="h-px bg-gray-200 border-0"></hr>
@@ -142,7 +135,7 @@ const MyBookingsPage = () => {
           <ul className=" mt-1">
             {booking.rooms.map((r) => (
               <li key={r._id} className="mt-4">
-                <p>{r.roomId?.type} - Room ({r.roomNumber})</p>
+                <p>{r.roomId?.type} - Room ({r.roomNumber}), Adults: {r.adults}, Children: {r.children}</p>
                 {!imgLoaded && (
                   <img
                     src={preloader}

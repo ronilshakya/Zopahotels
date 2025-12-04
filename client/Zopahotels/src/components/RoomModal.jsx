@@ -5,9 +5,11 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import preloader from '../assets/preloader.gif';
 import { IoClose } from "react-icons/io5";
+import { useHotel } from "../context/HotelContext";
 
 const RoomModal = ({ room, onClose }) => {
   const [roomDetails, setRoomDetails] = useState(null);
+  const {hotel} = useHotel();
 
   useEffect(() => {
     const fetchRoomDetails = async () => {
@@ -85,7 +87,10 @@ const RoomModal = ({ room, onClose }) => {
             Max Adults: {room.maxAdults}, Max Children: {room.maxChildren}
           </p>
           <p className="text-gray-700 mb-2 font-semibold">
-            Price per Night: ${roomDetails?.pricePerNight || room.pricePerNight}
+            {roomDetails.pricing.map((p)=> (
+                  <p>{p.adults} Adults - {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")}{p.price}/ night</p>
+                  
+                ))}
           </p>
           <p className=" text-sm text-gray-700">{roomDetails?.description || room.description}</p>
 

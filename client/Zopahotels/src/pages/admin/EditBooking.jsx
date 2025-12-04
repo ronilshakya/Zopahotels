@@ -14,8 +14,6 @@ const EditBooking = () => {
   const [form, setForm] = useState({
     checkIn: '',
     checkOut: '',
-    adults: 1,
-    children: 0,
     selectedRooms: [],
     status: 'pending',
   });
@@ -43,12 +41,12 @@ const EditBooking = () => {
         setForm({
           checkIn: bookingData.checkIn ? new Date(bookingData.checkIn).toISOString().split('T')[0] : '',
           checkOut: bookingData.checkOut ? new Date(bookingData.checkOut).toISOString().split('T')[0] : '',
-          adults: bookingData.adults || 1,
-          children: bookingData.children || 0,
           selectedRooms: bookingData.rooms?.map(r => ({
             roomId: r.roomId?._id || '',
             roomNumber: r.roomNumber || '',
             type: r.roomId?.type || 'Unknown',
+            adults: r.adults || 1,
+            children: r.children || 0
           })) || [],
           status: bookingData.status || 'pending',
           // ✅ Guest fields
@@ -160,9 +158,12 @@ const EditBooking = () => {
       const payload = {
         checkIn: form.checkIn,
         checkOut: form.checkOut,
-        adults: parseInt(form.adults),
-        children: parseInt(form.children),
-        rooms: form.selectedRooms.map(r => ({ roomId: r.roomId, roomNumber: r.roomNumber })),
+        rooms: form.selectedRooms.map(r => ({ 
+          roomId: r.roomId, 
+          roomNumber: r.roomNumber,
+          adults: parseInt(r.adults),
+          children: parseInt(r.children)
+        })),
         status: form.status,
         bookingSource
       };
@@ -263,7 +264,6 @@ const EditBooking = () => {
         name="guestPhone"
         value={form.guestPhone}
         onChange={handleChange}
-        required
         className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
       />
     </div>
@@ -331,48 +331,70 @@ const EditBooking = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
           </div>
 
-          {/* Adults / Children */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Adults</label>
-              <input type="number" name="adults" value={form.adults} onChange={handleChange} min="1" required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Children</label>
-              <input type="number" name="children" value={form.children} onChange={handleChange} min="0" required
-                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500" />
-            </div>
-          </div>
 
           {/* Rooms */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
-            {form.selectedRooms.map((room, index) => {
-              const rawOptions = availableRoomNumbers?.[room.roomId] || [];
-              const options = rawOptions.filter(r => r.status === "available");
-              const selectedNumbers = form.selectedRooms.filter(r => r.roomId === room.roomId && r.roomNumber && r !== room).map(r => r.roomNumber);
-              const filteredOptions = options.filter(num => !selectedNumbers.includes(num));
+  <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
+  {form.selectedRooms.map((room, index) => {
+    const rawOptions = availableRoomNumbers?.[room.roomId] || [];
+    const options = rawOptions.filter(r => r.status === "available");
+    const selectedNumbers = form.selectedRooms.filter(r => r.roomId === room.roomId && r.roomNumber && r !== room).map(r => r.roomNumber);
+    const filteredOptions = options.filter(num => !selectedNumbers.includes(num.number));
 
-              return (
-                <div key={room.roomId + "-" + index} className="mb-3">
-                  <p className="text-sm mb-1 font-semibold">{room.type}</p>
-                  <select
-                    value={room.roomNumber || ""}
-                    onChange={(e) => handleRoomNumberChange(room.roomId, index, e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="">Select room number</option>
-                    {filteredOptions.length > 0 ? (
-                      filteredOptions.map(num => <option key={num.number} value={num.number}>{num.number}</option>)
-                    ) : (
-                      <option disabled>No rooms available</option>
-                    )}
-                  </select>
-                </div>
-              );
-            })}
-          </div>
+    return (
+      <div key={room.roomId + "-" + index} className="mb-3 border p-3 rounded-md">
+        <p className="text-sm mb-1 font-semibold">{room.type}</p>
+        <select
+          value={room.roomNumber || ""}
+          onChange={(e) => handleRoomNumberChange(room.roomId, index, e.target.value)}
+          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select room number</option>
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map(num => <option key={num.number} value={num.number}>{num.number}</option>)
+          ) : (
+            <option disabled>No rooms available</option>
+          )}
+        </select>
+
+        {/* Adults */}
+        <div className="mt-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Adults</label>
+          <input
+            type="number"
+            min="1"
+            value={room.adults}
+            onChange={(e) => {
+              const updatedRooms = [...form.selectedRooms];
+              updatedRooms[index].adults = e.target.value;
+              setForm({ ...form, selectedRooms: updatedRooms });
+            }}
+            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+
+        {/* Children */}
+        <div className="mt-2">
+          <label className="block text-sm font-medium text-gray-700 mb-1">Children</label>
+          <input
+            type="number"
+            min="0"
+            value={room.children}
+            onChange={(e) => {
+              const updatedRooms = [...form.selectedRooms];
+              updatedRooms[index].children = e.target.value;
+              setForm({ ...form, selectedRooms: updatedRooms });
+            }}
+            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            required
+          />
+        </div>
+      </div>
+    );
+  })}
+</div>
+
 
           {/* Status */}
           <div>

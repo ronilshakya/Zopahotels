@@ -16,15 +16,15 @@ const CheckoutPage = () => {
     );
   }
 
-  const { selectedRooms, checkIn, checkOut, adults, children } = state;
-
+  const { selectedRooms, checkIn, checkOut } = state;
   const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
 
   // Total price for all rooms
   const totalPrice = selectedRooms.reduce(
-    (sum, room) => sum + room.pricePerNight * room.quantity * nights,
-    0
-  );
+  (sum, room) => sum + room.pricePerNight * nights,
+  0
+);
+
 
   const handleConfirmBooking = async () => {
     const token = localStorage.getItem("authToken");
@@ -36,18 +36,23 @@ const CheckoutPage = () => {
       return;
     }
 
+    // Build payload with per-room occupancy
     const payload = {
-      rooms: selectedRooms.map(room => ({
-        roomId: room.roomId,
-        quantity: room.quantity
-      })),
-      customerType: "Member",
-      checkIn,
-      checkOut,
-      adults,
-      children,
-      numberOfRooms: selectedRooms.reduce((sum, r) => sum + r.quantity, 0)
-    };
+  rooms: selectedRooms.map(room => ({
+  roomId: room.roomId,
+  adults: room.adults,
+  children: room.children,
+  pricePerNight: room.pricePerNight,
+  totalPrice: room.pricePerNight * nights,
+  type: room.type
+})),
+
+  customerType: "Member",
+  checkIn,
+  checkOut,
+  numberOfRooms: selectedRooms.length
+};
+
 
     try {
       setLoading(true);
@@ -75,21 +80,23 @@ const CheckoutPage = () => {
         <div className="space-y-4">
           <p><strong>Check-in:</strong> {checkIn}</p>
           <p><strong>Check-out:</strong> {checkOut}</p>
-          <p><strong>Guests:</strong> {adults} Adults | {children} Children</p>
         </div>
 
         <div className="space-y-4">
-          {selectedRooms.map(room => (
-            <div key={room.roomId} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-semibold">{room.type}</p>
-                <p>{room.quantity} room(s) × ${room.pricePerNight} × {nights} night(s)</p>
-              </div>
-              <p className="font-bold text-blue-600">
-                ${room.pricePerNight * room.quantity * nights}
-              </p>
-            </div>
-          ))}
+          {selectedRooms.map((room, idx) => (
+  <div key={idx} className="flex justify-between items-center p-4 bg-gray-50 rounded-lg">
+    <div>
+      <p className="font-semibold">{room.type}</p>
+      <p>{room.adults} Adult(s) | {room.children} Child(ren)</p>
+      <p>${room.pricePerNight} × {nights} night(s)</p>
+    </div>
+    <p className="font-bold text-blue-600">
+      ${room.pricePerNight * nights}
+    </p>
+  </div>
+))}
+
+
         </div>
 
         <div className="flex justify-between items-center p-4 bg-gray-100 rounded-lg">

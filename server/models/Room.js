@@ -8,16 +8,12 @@ const RoomSchema = new mongoose.Schema({
     description:{
         type: String
     },
-    price:{
-        type: Number,
-        required: true,
-        min:0
-    },
-    adults:{
-        type: Number,
-        default: 0,
-        min:0
-    },
+    pricing: [
+        {
+        adults: { type: Number, required: true, min: 1 },
+        price: { type: Number, required: true, min: 0 }
+        }
+    ],
     children:{
         type: Number,
         default: 0,

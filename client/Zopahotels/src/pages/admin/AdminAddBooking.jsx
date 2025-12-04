@@ -28,11 +28,9 @@ const AdminAddBooking = () => {
   const [bookingData, setBookingData] = useState({
     customerType: "Member",
     userId: "",
-    rooms: [{ roomId: "", numRooms: 1 }],
+    rooms: [{ roomId: "", numRooms: 1, adults: 1, children: 0 }],
     checkIn: today,
-    checkOut: tomorrow,
-    adults: 1,
-    children: 0,
+    checkOut: tomorrow
   });
 
   const adminToken = localStorage.getItem("adminToken");
@@ -107,6 +105,7 @@ const AdminAddBooking = () => {
     setBookingData({ ...bookingData, rooms: newRooms });
   };
 
+
   const handleNumRoomsChange = (index, e) => {
     const newRooms = [...bookingData.rooms];
     newRooms[index].numRooms = Number(e.target.value);
@@ -133,6 +132,12 @@ const AdminAddBooking = () => {
     const payload = {
       ...bookingData,
       bookingSource, // include booking source
+      rooms: bookingData.rooms.map(r => ({
+        roomId: r.roomId,
+        quantity: r.numRooms,   // ✅ send as quantity
+        adults: r.adults,
+        children: r.children
+      }))
     };
 
     // If customer is Guest, remove userId and ensure guest info is included
@@ -150,6 +155,7 @@ const AdminAddBooking = () => {
 
 
     const res = await createBookingAdmin({ payload, token: adminToken });
+    
     Swal.fire("Success", res.message, "success");
     navigate("/admin/all-bookings");
   } catch (err) {
@@ -283,13 +289,13 @@ const AdminAddBooking = () => {
 
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
       <div>
-        <label class="text-sm font-medium text-gray-700">Country</label>
+        <label className="text-sm font-medium text-gray-700">Country</label>
         <input
           list="countries"
           name="guestCountry"
           value={bookingData.guestCountry || ""}
           onChange={handleChange}
-          class="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+          className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
           required
         />
         <datalist id="countries">
@@ -312,8 +318,8 @@ const AdminAddBooking = () => {
           disabled={!bookingData.guestCountry}
         />
         <datalist id="cities">
-          {cities.map((city) => (
-            <option key={city.name} value={city.name} />
+          {cities.map((city,i) => (
+            <option key={i} value={city.name} />
           ))}
         </datalist>
       </div>
@@ -376,68 +382,91 @@ const AdminAddBooking = () => {
 
           {/* Rooms */}
           {bookingData.rooms.map((r, index) => (
-            <div key={index} className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end mb-4">
-              {/* Room Type */}
-              <div>
-                <label className="text-sm font-medium text-gray-700">Room</label>
-                <select
-                  name="roomId"
-                  value={r.roomId}
-                  onChange={(e) => handleRoomChange(index, e)}
-                  className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                  required
-                >
-                  <option value="">Select Room</option>
-                  {rooms
-                  .map((room) => (
-                    <option key={room._id} value={room._id}>
-                      {room.type} (${room.price}/night)
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
-                <select
-                  value={r.numRooms || ""}
-                  onChange={(e) => handleNumRoomsChange(index, e)}
-                  disabled={!r.roomId || loading || !availableRoomCounts[r.roomId]}
-                  className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                >
-                  <option value="">Select Number</option>
-                  {r.roomId &&
-                    (() => {
-                      const roomType = rooms.find((room) => room._id === r.roomId);
-                      if (!roomType) return null;
+  <div key={index} className="grid grid-cols-1 sm:grid-cols-5 gap-4 items-end mb-4">
+    {/* Room Type */}
+    <div>
+      <label className="text-sm font-medium text-gray-700">Room</label>
+      <select
+        name="roomId"
+        value={r.roomId}
+        onChange={(e) => handleRoomChange(index, e)}
+        className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+        required
+      >
+        <option value="">Select Room</option>
+        {rooms.map((room) => (
+          <option key={room._id} value={room._id}>
+            {room.type}
+          </option>
+        ))}
+      </select>
+    </div>
 
-                      // count rooms not under maintenance
-                      const maintenanceCount = roomType.rooms.filter(r => r.status === "not_available").length;
+    {/* Number of Rooms */}
+    <div>
+      <label className="text-sm font-medium text-gray-700">Number of Rooms</label>
+      <select
+        name="numRooms"
+        value={r.numRooms}
+        onChange={(e) => handleRoomChange(index, e)}
+        disabled={!r.roomId || loading || !availableRoomCounts[r.roomId]}
+        className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+      >
+        <option value="">Select Number</option>
+        {r.roomId &&
+          (() => {
+            const roomType = rooms.find((room) => room._id === r.roomId);
+            if (!roomType) return null;
+            const maintenanceCount = roomType.rooms.filter(r => r.status === "not_available").length;
+            const maxSelectable = Math.max(availableRoomCounts[r.roomId] - maintenanceCount, 0);
+            return Array.from({ length: maxSelectable }, (_, i) => i + 1).map((n) => (
+              <option key={n} value={n}>{n}</option>
+            ));
+          })()}
+      </select>
+    </div>
 
-                      // subtract maintenance rooms from availableRoomCounts
-                      const maxSelectable = Math.max(availableRoomCounts[r.roomId] - maintenanceCount, 0);
+    {/* Adults */}
+    <div>
+      <label className="text-sm font-medium text-gray-700">Adults</label>
+      <input
+        type="number"
+        name="adults"
+        min="1"
+        value={r.adults}
+        onChange={(e) => handleRoomChange(index, e)}
+        className="mt-1 block w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+        required
+      />
+    </div>
 
-                      return Array.from({ length: maxSelectable }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}
-                        </option>
-                      ));
-                    })()}
-                </select>
-              </div>
+    {/* Children */}
+    <div>
+      <label className="text-sm font-medium text-gray-700">Children</label>
+      <input
+        type="number"
+        name="children"
+        min="0"
+        value={r.children}
+        onChange={(e) => handleRoomChange(index, e)}
+        className="mt-1 block w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+        required
+      />
+    </div>
 
+    {/* Remove Button */}
+    {bookingData.rooms.length > 1 && (
+      <button
+        type="button"
+        onClick={() => removeRoom(index)}
+        className="text-white bg-red-500 mt-6 p-2 rounded-lg hover:bg-red-600"
+      >
+        Remove
+      </button>
+    )}
+  </div>
+))}
 
-
-              {bookingData.rooms.length > 1 && (
-                <button
-                  type="button"
-                  onClick={() => removeRoom(index)}
-                  className="text-white bg-red-500 mt-6 p-2 rounded-lg hover:bg-red-600"
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
 
           <button
             type="button"
@@ -473,33 +502,6 @@ const AdminAddBooking = () => {
           )}
 
 
-          {/* Guests */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="text-sm font-medium text-gray-700">Adults</label>
-              <input
-                type="number"
-                name="adults"
-                min="1"
-                value={bookingData.adults}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                required
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-700">Children</label>
-              <input
-                type="number"
-                name="children"
-                min="0"
-                value={bookingData.children}
-                onChange={handleChange}
-                className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-                required
-              />
-            </div>
-          </div>
 
           <button
             type="submit"
