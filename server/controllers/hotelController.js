@@ -8,7 +8,16 @@ exports.createHotel = async (req, res) => {
             return res.status(400).json({ message: "Only one hotel can be created" });
         }
 
-        const { name, description, address, phone, email,currency,amenities,bookingSource } = req.body;
+        let { name, description, address, phone, email,currency,amenities,bookingSource } = req.body;
+
+         // Parse amenities if it's a string
+        if (typeof amenities === "string") {
+          try {
+            amenities = JSON.parse(amenities);
+          } catch (err) {
+            amenities = []; // fallback to empty array
+          }
+        }
 
         // If logo is uploaded via multer
         let logo = null;

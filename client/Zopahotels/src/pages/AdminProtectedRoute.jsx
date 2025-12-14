@@ -4,7 +4,7 @@ const AdminProtectedRoute = ({ children }) => {
   const token = localStorage.getItem("adminToken");
   const user = JSON.parse(localStorage.getItem("adminUser"));
 
-  if (!token || user.role !== "admin") {
+ if (!token || !["admin", "staff"].includes(user.role)) {
     return <Navigate to="/admin" replace />;
   }
 

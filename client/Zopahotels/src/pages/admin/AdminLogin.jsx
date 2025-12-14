@@ -31,10 +31,11 @@ const AdminLogin = () => {
 
       const { token, user } = res.data;
 
-      if (user.role !== "admin") {
-        setError("You are not authorized as admin");
+      if (!["admin", "staff"].includes(user.role)) {
+        setError("You are not authorized");
         return;
       }
+
 
       localStorage.setItem("adminToken", token);
       localStorage.setItem("adminUser", JSON.stringify(user));

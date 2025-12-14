@@ -16,10 +16,17 @@ const auth = (req,res,next) =>{
 }
 
 const isAdmin = (req,res,next) =>{
-    if(req.user.role !== 'admin'){
-        return res.status(403).json({message: "Access Denied"});
+    if (!["admin", "staff"].includes(req.user.role)) {
+        return res.status(403).json({ message: "Access Denied" });
     }
     next();
+}
+
+const accessDisabledForStaff = (req, res, next) => {
+  if (req.user.role === 'staff') {
+    return res.status(403).json({ message: "Access Denied for staff users" });
+  }
+  next();
 }
 
 const verifyTurnstile = async (req, res, next) => {
@@ -52,4 +59,4 @@ const verifyTurnstile = async (req, res, next) => {
   }
 };
 
-module.exports = {auth,isAdmin,verifyTurnstile};
+module.exports = {auth,isAdmin,verifyTurnstile,accessDisabledForStaff};

@@ -55,7 +55,7 @@ export const getAllUsers = async (token) =>{
 }
 export const getAllAdmins = async (token) =>{
   try {
-    const res = await axios.get(`${API_URL_EXTENDED}?role=admin`,{
+    const res = await axios.get(`${API_URL_EXTENDED}?role=admin,staff`,{
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${token}` 

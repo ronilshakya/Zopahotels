@@ -80,20 +80,6 @@ const HotelForm = ({ mode }) => {
     }
   };
 
-  // Amenities handlers
-  // const handleAmenityChange = (index, value) => {
-  //   const updated = [...hotelData.amenities];
-  //   updated[index] = value;
-  //   setHotelData({ ...hotelData, amenities: updated });
-  // };
-
-  // const addAmenity = () =>
-  //   setHotelData({ ...hotelData, amenities: [...hotelData.amenities, ""] });
-
-  // const removeAmenity = (index) => {
-  //   const updated = hotelData.amenities.filter((_, i) => i !== index);
-  //   setHotelData({ ...hotelData, amenities: updated.length ? updated : [""] });
-  // };
 
   // Submit form
   const handleSubmit = async (e) => {

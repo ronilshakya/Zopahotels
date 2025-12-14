@@ -39,6 +39,7 @@ const SearchRoomsPage = () => {
     try {
       const result = await searchAvailableRooms(filters);
 
+
       const roomsWithImages = await Promise.all(
       result.availableRooms.map(async (room) => {
     try {
@@ -68,6 +69,8 @@ const SearchRoomsPage = () => {
         ...prev,
         [room.roomId]: finalAvailableRoomNumbers.length,
       }));
+
+
 
       return { 
         ...room, 
@@ -149,6 +152,7 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
   });
 
 };
+
 
 
 
@@ -379,7 +383,10 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
 
   return (
     <>
-      <span className="text-lg font-bold text-blue-600">${totalPrice}</span>
+      {occupancies.length > 0 && (
+        <span className="text-lg font-bold text-blue-600">${totalPrice}</span>
+      )}
+
       <span
         className="text-blue-600 font-semibold underline cursor-pointer"
         onClick={() => viewRoomModal(room)}

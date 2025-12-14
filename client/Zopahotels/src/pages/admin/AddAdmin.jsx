@@ -15,6 +15,7 @@ const AddAdmin = () => {
     state: "",
     zip: "",
     country: "",
+    role: "staff"
   });
   const [loading, setLoading] = useState(false);
 
@@ -49,6 +50,21 @@ const AddAdmin = () => {
       </h1>
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
+        {/* role */}
+        <div>
+          <label className="text-sm font-medium text-gray-700">Assign Role</label>
+          <select
+            name="role"
+            value={adminData.role}
+            onChange={handleChange}
+            placeholder="Enter full name"
+            className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+          >
+            <option value="staff">Staff</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+
         {/* Name */}
         <div>
           <label className="text-sm font-medium text-gray-700">Full Name</label>

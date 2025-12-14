@@ -168,8 +168,8 @@ exports.createBookingAdmin = async (req, res) => {
       return res.status(400).json({ message: "User ID is required for members" });
     }
     if (customerType === "Guest") {
-      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestAddress) {
-        return res.status(400).json({ message: "Guest first name, last name, city, country, and address are required for guests" });
+      if (!guestFirstName || !guestLastName) {
+        return res.status(400).json({ message: "Guest first name and last name required" });
       }
       if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
         return res.status(400).json({ message: "Invalid email format" });
@@ -199,11 +199,11 @@ exports.createBookingAdmin = async (req, res) => {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (checkInDate < today) {
-      return res.status(400).json({ message: "Check-in date cannot be in the past" });
-    }
+    // const today = new Date();
+    // today.setHours(0, 0, 0, 0);
+    // if (checkInDate < today) {
+    //   return res.status(400).json({ message: "Check-in date cannot be in the past" });
+    // }
 
     const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
@@ -360,7 +360,7 @@ exports.getAvailableRooms = async (req, res) => {
 
           // if (adultsCount + childrenCount <= room.maxOccupancy) {
           if (childrenCount <= room.children) {
-            const pricingEntry = room.pricing.find(p => p.adults === adultsCount);
+            const pricingEntry = room.pricing.find(p => p.adults >= adultsCount);
             if (pricingEntry) {
               freeRoomNumbers.push({
                 roomNumber: r.roomNumber,

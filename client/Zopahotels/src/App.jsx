@@ -38,6 +38,7 @@ import Amenities from './pages/admin/Amenities';
 import BookingSource from './pages/admin/BookingSource';
 import RoomStatus from './pages/admin/RoomStatus';
 import BookingDetails from './pages/admin/BookingDetails';
+import NotFound from './pages/NotFound';
 
 // Wrapper to get `mode` from URL and pass as prop
 const HotelFormWrapper = () => {
@@ -101,6 +102,7 @@ export default function App() {
           {/* Hotel form routes */}
           <Route path="hotel-form/:mode" element={<HotelFormWrapper />} />
         </Route>
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
     </>

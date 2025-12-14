@@ -296,7 +296,6 @@ const AdminAddBooking = () => {
           value={bookingData.guestCountry || ""}
           onChange={handleChange}
           className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          required
         />
         <datalist id="countries">
           {countries.map((country) => (
@@ -314,7 +313,6 @@ const AdminAddBooking = () => {
           value={bookingData.guestCity || ""}
           onChange={handleChange}
           className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          required
           disabled={!bookingData.guestCountry}
         />
         <datalist id="cities">
@@ -335,7 +333,6 @@ const AdminAddBooking = () => {
           value={bookingData.guestAddress || ""}
           onChange={handleChange}
           className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
-          required
         />
       </div>
 

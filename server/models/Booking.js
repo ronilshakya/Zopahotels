@@ -22,18 +22,18 @@ const BookingSchema = new mongoose.Schema({
     },
     guestAddress: { 
         type: String,
-        required: function() { return this.customerType === "Guest"; } 
+        // required: function() { return this.customerType === "Guest"; } 
     },
     guestCity: { 
         type: String,
-        required: function() { return this.customerType === "Guest"; } 
+        // required: function() { return this.customerType === "Guest"; } 
     },
     guestZipCode: { 
         type: String,
     },
     guestCountry: { 
         type: String,
-        required: function() { return this.customerType === "Guest"; } 
+        // required: function() { return this.customerType === "Guest"; } 
     },
 
     customerType: { 

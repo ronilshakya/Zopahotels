@@ -143,7 +143,10 @@ exports.getUsers = async (req, res) => {
     const { role } = req.query; // ?role=admin OR ?role=user
 
     let filter = {};
-    if (role) filter.role = role;
+    if (role) {
+      const rolesArray = role.split(","); // ["admin", "staff"]
+      filter.role = { $in: rolesArray };
+    }
 
     // Find users
     const users = await User.find(filter).select("-password");
@@ -226,7 +229,7 @@ exports.deleteUser = async (req, res) => {
 
 exports.registerAdmin = async (req, res) => {
     try {
-        let { name, email, password, phone, address, city, state, zip, country } = req.body;
+        let { name, email, password, phone, address, city, state, zip, country, role } = req.body;
 
         name = name?.trim();
         email = email?.trim();
@@ -240,6 +243,17 @@ exports.registerAdmin = async (req, res) => {
 
         if (!name || !email || !password || !phone || !address || !city || !state || !zip || !country) {
             return res.status(400).json({ message: "All fields are required" });
+        }
+
+         // Enforce secure role assignment
+        const allowedRolesForAdminCreation = ["admin", "staff"];
+
+        // If no role sent → default to "worker"
+        if (!role) role = "staff";
+
+        // ROLE VALIDATION
+        if (!allowedRolesForAdminCreation.includes(role)) {
+            return res.status(400).json({ message: "Invalid role" });
         }
 
         if (!validator.isEmail(email)) return res.status(400).json({ message: "Invalid email" });
@@ -268,7 +282,7 @@ exports.registerAdmin = async (req, res) => {
             state,
             zip,
             country,
-            role: "admin",
+            role,
             isVerified: true,        // marked as verified immediately
             verificationToken: null  // no token needed
         });
@@ -426,7 +440,7 @@ exports.searchUsers = async (req, res) => {
     const { search = "", page = 1, limit = 10 } = req.query;
     const skip = (page - 1) * limit;
 
-    let query = {role: { $ne: "admin" }};
+    let query = { role: { $nin: ["admin", "staff"] } };
 
     if (search) {
       query.$or = [

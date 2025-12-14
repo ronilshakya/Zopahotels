@@ -11,22 +11,29 @@ const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
   const toggleSidebar = () => setIsOpen(!isOpen);
+  const user = JSON.parse(localStorage.getItem("adminUser"));
 
   const links = [
     { to: "/admin/dashboard", label: "Dashboard" },
     { to: "/admin/room-status", label: "Rooms Status" },
     { to: "/admin/all-bookings", label: "Bookings" },
     { to: "/admin/all-users", label: "Customers" },
-    { to: "/admin/all-admins", label: "Users" },
+    ...(user?.role === "admin" ? [{ to: "/admin/all-admins", label: "Users" }] : []),
     { to: "/admin/booking-calender", label: "Calender" },
     { to: "/admin/reports", label: "Reports" },
-    { to: "/admin/settings", label: "Settings", 
-      submenu: [
-        { to: "/admin/amenities", label: "Amenities" },
-        { to: "/admin/booking-sources", label: "Booking Sources" },
-        { to: "/admin/admin-rooms", label: "Rooms" },
-      ] 
-    },
+    ...(user?.role === "admin"
+    ? [
+        {
+          to: "/admin/settings",
+          label: "Settings",
+          submenu: [
+            { to: "/admin/amenities", label: "Amenities" },
+            { to: "/admin/booking-sources", label: "Booking Sources" },
+            { to: "/admin/admin-rooms", label: "Rooms" },
+          ],
+        },
+      ]
+    : []),
   ];
 
   //  const toggleSubmenu = (linkTo) => {

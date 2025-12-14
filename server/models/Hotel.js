@@ -28,8 +28,8 @@ const hotelSchema = new mongoose.Schema({
     amenities: [
         {
         _id: { type: mongoose.Schema.Types.ObjectId, auto: true }, // unique amenity ID
-        name: { type: String, required: true }, 
-        icon: { type: String, required: true } 
+        name: { type: String }, 
+        icon: { type: String } 
         }
     ],
     bookingSource: [String],

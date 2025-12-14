@@ -3,7 +3,7 @@ const multer = require('multer');
 const router = express.Router();
 const path = require('path');
 const {registerUser,verifyUser,login,getUserById,updateUser, deleteUser, getUsers,registerAdmin,registerOfflineCustomer, forgotPassword, resetPassword, searchUsers, uploadProfileImage, uploadProfileImageAdmin} = require('../controllers/authController');
-const {auth,isAdmin, verifyTurnstile} = require('../middleware/authMiddleware');
+const {auth,isAdmin, verifyTurnstile, accessDisabledForStaff} = require('../middleware/authMiddleware');
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "uploads/profile-pictures/"),
@@ -34,7 +34,7 @@ router.put("/upload-profile-image-admin/:id",auth, isAdmin ,upload.single("profi
 router.get('/:id',auth,getUserById);
 router.put("/:id",auth,updateUser);
 router.delete("/:id",auth,isAdmin,deleteUser);
-router.post("/register-admin",auth,isAdmin,registerAdmin);
+router.post("/register-admin",auth,isAdmin,accessDisabledForStaff,registerAdmin);
 
 // router.put("/:id",checkWP,updateUser);
 // router.get("/",checkWP,getAllUsers);
