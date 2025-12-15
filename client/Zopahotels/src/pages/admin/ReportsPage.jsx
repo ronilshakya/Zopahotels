@@ -60,6 +60,8 @@ const ReportsPage = () => {
     newWindow.print();
   };
 
+  console.log(bookings)
+
   return (
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-7xl mx-auto bg-white shadow-lg rounded-lg p-6">
@@ -146,7 +148,7 @@ const ReportsPage = () => {
                     (1000 * 60 * 60 * 24);
                   return (
                     <tr key={b._id} className="border-b hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm">{b.user?.name || "Deleted User"}</td>
+                      <td className="px-4 py-2 text-sm">{b.guestFirstName + " " + b.guestLastName || "Deleted User"}</td>
                       <td className="px-4 py-2 text-gray-600 text-sm">
                     <ul className="flex flex-row md:flex-col flex-wrap gap-1 md:gap-0 w-[200px]">
                       {b.rooms.map((r, i) => (
@@ -159,7 +161,15 @@ const ReportsPage = () => {
                       <td className="px-4 py-2 text-sm">{new Date(b.checkIn).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-sm">{new Date(b.checkOut).toLocaleDateString()}</td>
                       <td className="px-4 py-2 text-sm">{nights}</td>
-                      <td className="px-4 py-2 text-sm">{b.adults + b.children}</td>
+                      <td className="px-4 py-2 text-sm">
+                        <ul>
+                        {b.rooms.map((r, i) => (
+                        <li key={i} className="mr-2">
+                          {r.adults} Adults, {r.children} Children
+                        </li>
+                      ))}
+                      </ul>
+                      </td>
                       <td className="px-4 py-2 text-sm">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {b.totalPrice}</td>
                       <td className="px-4 py-2 text-sm capitalize">{b.status}</td>
                     </tr>

@@ -237,16 +237,16 @@ exports.createBookingAdmin = async (req, res) => {
   totalPrice += pricingEntry.price * nights * quantity;
 
   // Check for duplicate room numbers in the booking payload
-const assignedNumbers = new Set();
-for (const r of bookingRooms) {
-  const key = `${r.roomId}_${r.roomNumber}`;
-  if (assignedNumbers.has(key)) {
-    return res.status(400).json({
-      message: `Room number ${r.roomNumber} of type ${r.roomId} is already assigned in this booking`
-    });
-  }
-  assignedNumbers.add(key);
-}
+// const assignedNumbers = new Set();
+// for (const r of bookingRooms) {
+//   const key = `${r.roomId}_${r.roomNumber}`;
+//   if (assignedNumbers.has(key)) {
+//     return res.status(400).json({
+//       message: `Room number ${r.roomNumber} of type ${r.roomId} is already assigned in this booking`
+//     });
+//   }
+//   assignedNumbers.add(key);
+// }
 
 
   // Expand into multiple bookingRooms entries
