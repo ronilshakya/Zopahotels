@@ -51,6 +51,7 @@ const AdminAddBooking = () => {
     fetchUsersRooms();
   }, [adminToken]);
 
+
   useEffect(() => {
     if (hotel && hotel.bookingSource) {
       const sourcesArray = Array.isArray(hotel.bookingSource)
@@ -165,6 +166,7 @@ const AdminAddBooking = () => {
   }
 };
 
+console.log(bookingData)
 
   const handleSelectUser = (user) => {
     setBookingData({ ...bookingData, userId: user._id });
@@ -424,22 +426,50 @@ const AdminAddBooking = () => {
     </div>
 
     {/* Adults */}
-    <div>
-      <label className="text-sm font-medium text-gray-700">Adults</label>
+<div>
+  <label className="text-sm font-medium text-gray-700">Adults (per room)</label>
+  {r.roomId ? (() => {
+    const selectedRoom = rooms.find(room => room._id === r.roomId);
+    const maxAdults = selectedRoom?.pricing?.length > 0
+      ? Math.max(...selectedRoom.pricing.map(p => p.adults))
+      : 1;
+
+    return (
       <input
         type="number"
         name="adults"
         min="1"
+        max={maxAdults}
         value={r.adults}
-        onChange={(e) => handleRoomChange(index, e)}
+        onChange={(e) => {
+          let value = Number(e.target.value);
+          if (value > maxAdults) value = maxAdults; // enforce max
+          if (value < 1) value = 1; // enforce min
+          handleRoomChange(index, { target: { name: 'adults', value } });
+        }}
         className="mt-1 block w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
         required
       />
-    </div>
+
+    );
+  })() : (
+    <input
+      type="number"
+      name="adults"
+      min="1"
+      max={1}
+      value={r.adults}
+      onChange={(e) => handleRoomChange(index, e)}
+      disabled
+      className="mt-1 block w-full px-3 py-2 border rounded-lg bg-gray-100"
+    />
+  )}
+</div>
+
 
     {/* Children */}
     <div>
-      <label className="text-sm font-medium text-gray-700">Children</label>
+      <label className="text-sm font-medium text-gray-700">Children (per room)</label>
       <input
         type="number"
         name="children"

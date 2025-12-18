@@ -50,6 +50,12 @@ const SearchRoomsPage = () => {
         .filter(r => r.status !== 'not_available')
         .map(r => r.roomNumber);
 
+      const adultsCount = Number(filters.adults);
+      const hasPricing = roomDetails.pricing.some(p => p.adults === adultsCount);
+      if (!hasPricing) return null;
+
+
+
       // Skip rooms if no available numbers left
       if (availableRoomNumbers.length === 0) return null;
 
