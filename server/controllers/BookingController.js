@@ -491,7 +491,7 @@ exports.updateBooking = async (req, res) => {
         }
 
         // Capacity check per room
-        if (adultsCount + childrenCount > roomDoc.maxOccupancy) {
+        if (adultsCount + childrenCount > roomDoc.pricing.adults + roomDoc.pricing.children) {
           return res.status(400).json({
             message: `Room ${roomDoc.type} cannot accommodate ${adultsCount} adults and ${childrenCount} children`
           });

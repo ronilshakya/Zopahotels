@@ -275,7 +275,6 @@ const EditBooking = () => {
         name="guestAddress"
         value={form.guestAddress}
         onChange={handleChange}
-        required
         className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
       />
     </div>
@@ -288,7 +287,6 @@ const EditBooking = () => {
           name="guestCity"
           value={form.guestCity}
           onChange={handleChange}
-          required
           className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
         />
       </div>
@@ -311,7 +309,6 @@ const EditBooking = () => {
         name="guestCountry"
         value={form.guestCountry}
         onChange={handleChange}
-        required
         className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
       />
     </div>
@@ -335,6 +332,7 @@ const EditBooking = () => {
           {/* Rooms */}
           <div>
   <label className="block text-sm font-medium text-gray-700 mb-1">Rooms</label>
+  <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
   {form.selectedRooms.map((room, index) => {
     const rawOptions = availableRoomNumbers?.[room.roomId] || [];
     const options = rawOptions.filter(r => r.status === "available");
@@ -342,12 +340,12 @@ const EditBooking = () => {
     const filteredOptions = options.filter(num => !selectedNumbers.includes(num.number));
 
     return (
-      <div key={room.roomId + "-" + index} className="mb-3 border p-3 rounded-md">
+      <div key={room.roomId + "-" + index} className="mb-3 border border-gray-300 bg-gray-50 p-3 rounded-md">
         <p className="text-sm mb-1 font-semibold">{room.type}</p>
         <select
           value={room.roomNumber || ""}
           onChange={(e) => handleRoomNumberChange(room.roomId, index, e.target.value)}
-          className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500"
         >
           <option value="">Select room number</option>
           {filteredOptions.length > 0 ? (
@@ -369,7 +367,7 @@ const EditBooking = () => {
               updatedRooms[index].adults = e.target.value;
               setForm({ ...form, selectedRooms: updatedRooms });
             }}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
@@ -386,13 +384,14 @@ const EditBooking = () => {
               updatedRooms[index].children = e.target.value;
               setForm({ ...form, selectedRooms: updatedRooms });
             }}
-            className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500"
             required
           />
         </div>
       </div>
     );
   })}
+  </div>
 </div>
 
 
