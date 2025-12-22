@@ -17,27 +17,28 @@ const BookingCalendar = () => {
       try {
         const data = await getAllBookings(token);
         const formatted = data.map((booking) => {
-            let color = "gray"; // default
+          let color = "gray";
 
-            if (booking.status === "confirmed") color = "green";
-            else if (booking.status === "pending") color = "orange";
-            else if (booking.status === "cancelled") color = "red";
+          if (booking.status === "confirmed") color = "green";
+          else if (booking.status === "pending") color = "orange";
+          else if (booking.status === "cancelled") color = "red";
 
-            return {
-                id: booking._id,
-                title: `${booking.user?.name || booking.guestFirstName + ' ' + booking.guestLastName} - ${
-                booking.rooms.map((r) => r.roomNumber).join(", ")
-                }`,
-                start: booking.checkIn,
-                end: new Date(
-                new Date(booking.checkOut).setDate(
-                    new Date(booking.checkOut).getDate() + 1
-                )
-                ), // 👈 ensures inclusive
-                allDay: true,
-                color,
-            };
+          const checkIn = new Date(booking.checkIn);
+          const checkOut = new Date(booking.checkOut);
+
+          return {
+            id: booking._id,
+            title: `${booking.user?.name || booking.guestFirstName + ' ' + booking.guestLastName} - ${
+              booking.rooms.map((r) => r.roomNumber).join(", ")
+            }`,
+            start: checkIn,
+            end: new Date(checkOut.getTime() + 24 * 60 * 60 * 1000), // exclusive for FullCalendar
+            displayEnd: checkOut, // 👈 REAL checkout date
+            allDay: true,
+            color,
+          };
         });
+
 
         setEvents(formatted);
       } catch (error) {
@@ -56,15 +57,18 @@ const BookingCalendar = () => {
         initialView="dayGridMonth"
         events={events}
         eventDidMount={(info) => {
-        tippy(info.el, {
-          content: `
-            <strong>${info.event.title}</strong><br/>
-            From: ${info.event.start.toDateString()}<br/>
-            To: ${info.event.end.toDateString()}
-          `,
-          allowHTML: true,
-        });
-      }}
+          const displayEnd = info.event.extendedProps.displayEnd;
+
+          tippy(info.el, {
+            content: `
+              <strong>${info.event.title}</strong><br/>
+              From: ${info.event.start.toDateString()}<br/>
+              To: ${displayEnd.toDateString()}
+            `,
+            allowHTML: true,
+          });
+        }}
+
       eventClick={(info) => {
         // Go to edit page
         navigate(`/admin/edit-booking/${info.event.id}`);

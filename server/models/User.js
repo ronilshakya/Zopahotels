@@ -15,28 +15,22 @@ const userSchema = new mongoose.Schema({
         required: true    
     },
     phone:{
-        type: String,
-        required: true    
+        type: String
     },
     address:{
-        type: String,
-        required: true    
+        type: String  
     },
     city:{
-        type: String,
-        required: true    
+        type: String 
     },
     state:{
-        type: String,
-        required: true    
+        type: String  
     },
     zip:{
-        type: String,
-        required: true    
+        type: String 
     },
     country:{
-        type: String,
-        required: true    
+        type: String  
     },
     role:{
         type: String, 

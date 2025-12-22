@@ -134,7 +134,7 @@ const HotelForm = ({ mode }) => {
             value={hotelData.name}
             onChange={handleChange}
             placeholder="Enter hotel name"
-            className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
             required
           />
         </div>
@@ -147,7 +147,7 @@ const HotelForm = ({ mode }) => {
             value={hotelData.description}
             onChange={handleChange}
             placeholder="Enter hotel description"
-            className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white resize-none"
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white resize-none"
             rows={4}
           />
         </div>
@@ -161,7 +161,7 @@ const HotelForm = ({ mode }) => {
             value={hotelData.address}
             onChange={handleChange}
             placeholder="Enter address"
-            className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
           />
         </div>
 
@@ -175,7 +175,7 @@ const HotelForm = ({ mode }) => {
               value={hotelData.phone}
               onChange={handleChange}
               placeholder="Enter phone"
-              className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
             />
           </div>
           <div>
@@ -186,61 +186,22 @@ const HotelForm = ({ mode }) => {
               value={hotelData.email}
               onChange={handleChange}
               placeholder="Enter email"
-              className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
             />
           </div>
         </div>
 
-        {/* Amenities */}
-        {/* <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Amenities
-          </label>
-          {hotelData.amenities.map((amenity, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={amenity}
-                onChange={(e) => handleAmenityChange(index, e.target.value)}
-                className="w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                placeholder="Enter amenity"
-                required
-              />
-              <button
-                type="button"
-                onClick={() => removeAmenity(index)}
-                className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-                disabled={hotelData.amenities.length === 1}
-              >
-                X
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addAmenity}
-            className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
-            + Add Amenity
-          </button>
-        </div> */}
 
         {/* Logo */}
         <div>
           <label className="text-sm font-medium text-gray-700 mb-2 block">Hotel Logo</label>
-          <div className="flex items-center gap-4">
-            <input
-              type="file"
-              name="logo"
-              accept="image/*"
-              className="bg-white px-4 py-2 border rounded-lg"
-              onChange={handleChange}
-            />
+          <div className="flex flex-col gap-4">
+           
             {!preview && existingLogo && (
               <img
                 src={existingLogo}
                 alt="Current Logo"
-                className="w-32 h-32 object-cover border rounded-lg shadow"
+                className="w-full h-full object-cover border rounded-lg shadow"
               />
             )}
             {preview && (
@@ -250,6 +211,13 @@ const HotelForm = ({ mode }) => {
                 className="w-32 h-32 object-cover border rounded-lg shadow"
               />
             )}
+             <input
+              type="file"
+              name="logo"
+              accept="image/*"
+              className="bg-white px-4 py-2 border border-gray-300 rounded-lg"
+              onChange={handleChange}
+            />
           </div>
         </div>
 
@@ -260,12 +228,25 @@ const HotelForm = ({ mode }) => {
             name="currency"
             value={hotelData.currency}
             onChange={handleChange}
-            className="swal2-input"
+            className="swal2-input border border-gray-300 rounded-lg p-2"
             required
           >
             <option value="USD">USD – US Dollar ($)</option>
             <option value="NPR">NPR – Nepalese Rupee (₨)</option>
           </select>
+        </div>
+
+        {/* Booking times */}
+        <div className="grid grid-cols-2">
+          <div>
+            <label className="block mb-2 font-medium">Arrival Time</label>
+            <input type="time" placeholder="Arrival Time" className="border border-gray-300 p-2 rounded-lg" />
+          </div>
+        
+          <div>
+            <label className="block mb-2 font-medium">Departure Time</label>
+            <input type="time" placeholder="Departure Time" className="border border-gray-300 p-2 rounded-lg" />
+          </div>
         </div>
 
         {/* Submit */}

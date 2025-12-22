@@ -244,7 +244,6 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
         ) : (
           <div className="flex flex-col gap-4 mt-6">
             {availableRooms.map((room, i) => {
-              
               return(
               <div
                 key={i}
@@ -275,7 +274,7 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
                   </h3>
 
                   <p className="text-gray-600">
-                    Max: {room.maxAdults} Adults, Children - {room.children}
+                    Max: {Math.max(...room.pricing.map(p => p.adults))} Adults, {room.children} Children 
                   </p>
 
                   <p className="text-gray-600">{room.nights} night(s)</p>

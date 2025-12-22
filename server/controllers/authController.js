@@ -187,7 +187,7 @@ exports.updateUser = async (req,res) =>{
         if(!user){
             return res.status(404).json({message: "User not found"});
         }
-        const allowedFields = ["name","phone","address","city","state","zip","country"]
+        const allowedFields = ["name","phone","address","city","state","zip","country","role"]
         allowedFields.forEach((key) => {
             if(req.body[key] !== undefined){
                 user[key] = req.body[key];
@@ -241,7 +241,7 @@ exports.registerAdmin = async (req, res) => {
         zip = zip?.trim();
         country = country?.trim();
 
-        if (!name || !email || !password || !phone || !address || !city || !state || !zip || !country) {
+        if (!name || !email || !password) {
             return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -257,7 +257,6 @@ exports.registerAdmin = async (req, res) => {
         }
 
         if (!validator.isEmail(email)) return res.status(400).json({ message: "Invalid email" });
-        if (!validator.isMobilePhone(phone, 'any')) return res.status(400).json({ message: "Invalid phone number" });
 
         if (!validator.isLength(password, { min: 6 })) {
             return res.status(400).json({ message: "Password must be at least 6 characters" });
@@ -311,14 +310,12 @@ exports.registerOfflineCustomer = async (req,res) =>{
         zip = zip?.trim();
         country = country?.trim();
         password = password?.trim();
-        if (!name || !email || !phone || !address || !city || !state || !zip || !country) {
+        if (!name || !email) {
             return res.status(400).json({ message: "All fields except password are required" });
         }
         if (!validator.isEmail(email))
             return res.status(400).json({ message: "Invalid email address" });
 
-        if (!validator.isMobilePhone(phone, "any"))
-        return res.status(400).json({ message: "Invalid phone number" });
 
         const existingUser = await User.findOne({ email });
         if (existingUser) {

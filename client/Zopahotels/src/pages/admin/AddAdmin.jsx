@@ -118,7 +118,7 @@ const AddAdmin = () => {
               onChange={handleChange}
               placeholder="Enter phone number"
               className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-              required
+              
             />
           </div>
           <div>
@@ -130,7 +130,7 @@ const AddAdmin = () => {
               onChange={handleChange}
               placeholder="Enter city"
               className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-              required
+              
             />
           </div>
         </div>
@@ -146,7 +146,7 @@ const AddAdmin = () => {
               onChange={handleChange}
               placeholder="Enter address"
               className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-              required
+              
             />
           </div>
           <div>
@@ -158,7 +158,7 @@ const AddAdmin = () => {
               onChange={handleChange}
               placeholder="Enter state"
               className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-              required
+              
             />
           </div>
         </div>
@@ -174,7 +174,7 @@ const AddAdmin = () => {
               onChange={handleChange}
               placeholder="Enter ZIP code"
               className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-              required
+              
             />
           </div>
           <div>
@@ -186,7 +186,7 @@ const AddAdmin = () => {
               onChange={handleChange}
               placeholder="Enter country"
               className="mt-1 block w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-              required
+              
             />
           </div>
         </div>

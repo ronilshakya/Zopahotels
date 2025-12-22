@@ -20,7 +20,8 @@ const EditUser = () => {
     state: '',
     zip: '',
     country: '',
-    status: 'active' // Default status
+    status: 'active', // Default status,
+    role: ''
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -29,6 +30,7 @@ const EditUser = () => {
     const fetchUser = async () => {
       try {
         const userData = await getUserById(id, token);
+        console.log('Fetched user data:', userData);
         setFormData({
           name: userData.name || '',
           email: userData.email || '',
@@ -39,7 +41,8 @@ const EditUser = () => {
           state: userData.state || '',
           zip: userData.zip || '',
           country: userData.country || '',
-          status: userData.status || 'active' // Fetch status from backend
+          status: userData.status || 'active', // Fetch status from backend
+          role: userData.role || 'staff'
         });
       } catch (err) {
         console.error('Failed to fetch user:', err.response?.data || err.message);
@@ -85,7 +88,7 @@ const EditUser = () => {
     e.preventDefault();
 
     // Basic validation for required fields (excluding password and status)
-    if (!formData.name || !formData.email || !formData.phone || !formData.address || !formData.city || !formData.state || !formData.zip || !formData.country) {
+    if (!formData.name || !formData.email) {
       Swal.fire({
         title: "Please fill in all required fields",
         icon: "error"
@@ -180,7 +183,7 @@ const EditUser = () => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Enter phone number"
-              required
+              
             />
           </div>
           <div className="mb-4">
@@ -192,7 +195,7 @@ const EditUser = () => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Enter address"
-              required
+              
             />
           </div>
           <div className="mb-4">
@@ -204,7 +207,7 @@ const EditUser = () => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Enter city"
-              required
+              
             />
           </div>
           <div className="mb-4">
@@ -216,7 +219,7 @@ const EditUser = () => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Enter state"
-              required
+              
             />
           </div>
           <div className="mb-4">
@@ -228,7 +231,7 @@ const EditUser = () => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Enter zip code"
-              required
+              
             />
           </div>
           <div className="mb-4">
@@ -240,9 +243,26 @@ const EditUser = () => {
               onChange={handleChange}
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               placeholder="Enter country"
-              required
+              
             />
           </div>
+
+          <div className="mb-6">
+            <label htmlFor="role" className="block text-sm font-medium text-gray-700">
+              Role
+            </label>
+            <select
+              id="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="mt-1 block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+            >
+              <option value="staff">Staff</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+
+
           <div className="mb-6">
             <label htmlFor="status" className="block text-sm font-medium text-gray-700">Status</label>
             <div className="mt-1 flex items-center">

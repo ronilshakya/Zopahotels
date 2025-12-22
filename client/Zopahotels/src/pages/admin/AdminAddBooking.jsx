@@ -95,10 +95,12 @@ const AdminAddBooking = () => {
     fetchAvailableRoomCounts();
   }, [bookingData.rooms, bookingData.checkIn, bookingData.checkOut]);
 
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setBookingData((prev) => ({ ...prev, [name]: value }));
   };
+
 
   const handleRoomChange = (index, e) => {
     const newRooms = [...bookingData.rooms];
@@ -166,7 +168,6 @@ const AdminAddBooking = () => {
   }
 };
 
-console.log(bookingData)
 
   const handleSelectUser = (user) => {
     setBookingData({ ...bookingData, userId: user._id });
@@ -180,6 +181,8 @@ console.log(bookingData)
       countries.find(c => c.name === bookingData.guestCountry)?.isoCode
     )
   : [];
+
+
   
   return (
     <div className="min-h-screen bg-gray-100 py-10">

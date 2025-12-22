@@ -31,7 +31,7 @@ const hotelSchema = new mongoose.Schema({
         name: { type: String }, 
         icon: { type: String } 
         }
-    ],
+    ]
     bookingSource: [String],
 },{timestamps:true});
 
