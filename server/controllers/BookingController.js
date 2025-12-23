@@ -2,7 +2,16 @@ const  mongoose  = require("mongoose");
 const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const User = require("../models/User");
+const Hotel = require("../models/Hotel");
 const { v4: uuidv4 } = require("uuid");
+
+const buildDateTime = (dateStr, timeStr) => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date(dateStr);
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+};
+
 
 exports.createBooking = async (req, res) => {
   try {
@@ -44,25 +53,32 @@ exports.createBooking = async (req, res) => {
       }
     }
 
+    const hotel = await Hotel.findOne();
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
+      return res.status(400).json({
+        message: "Hotel arrival and departure time not configured"
+      });
+    }
+
+
     if (!rooms || rooms.length === 0) {
       return res.status(400).json({ message: "At least one room type must be selected" });
     }
 
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
+    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+    const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
+
     const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
 
     if (timeDiff <= 0) {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (checkInDate < today) {
+    if (checkInDate < new Date()) {
       return res.status(400).json({ message: "Check-in date cannot be in the past" });
     }
 
-    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
     let totalPrice = 0;
     const bookingRooms = [];
 
@@ -73,12 +89,6 @@ exports.createBooking = async (req, res) => {
       const quantity = Number(r.quantity || 1);
 
       // Capacity check
-      // if ((r.adults + children) > roomDoc.maxOccupancy * quantity) {
-      //   return res.status(400).json({
-      //     message: `Room ${roomDoc.type} cannot accommodate ${r.adults} adults and ${children} children`
-      //   });
-      // }
-
       if (r.adults > roomDoc.adults || r.children > roomDoc.children) {
         return res.status(400).json({
           message: `Room ${roomDoc.type} cannot accommodate ${r.adults} adults and ${r.children} children`
@@ -107,8 +117,8 @@ exports.createBooking = async (req, res) => {
     const bookingData = {
       customerType,
       rooms: bookingRooms,
-      checkIn,
-      checkOut,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
       totalPrice,
       status: "pending",
       numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
@@ -187,12 +197,21 @@ exports.createBookingAdmin = async (req, res) => {
       }
     }
 
+    const hotel = await Hotel.findOne();
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
+      return res.status(400).json({
+        message: "Hotel arrival and departure time not configured"
+      });
+    }
+
+
     if (!rooms || rooms.length === 0) {
       return res.status(400).json({ message: "At least one room type must be selected" });
     }
 
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
+    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+    const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
+
     const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
 
     if (timeDiff <= 0) {
@@ -205,7 +224,12 @@ exports.createBookingAdmin = async (req, res) => {
     //   return res.status(400).json({ message: "Check-in date cannot be in the past" });
     // }
 
-    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    // const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const nights = Math.round(
+      (new Date(checkOut) - new Date(checkIn)) / MS_PER_DAY
+    );
+
     let totalPrice = 0;
     const bookingRooms = [];
 
@@ -264,8 +288,8 @@ exports.createBookingAdmin = async (req, res) => {
     const bookingPayload = {
       customerType,
       rooms: bookingRooms,
-      checkIn,
-      checkOut,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
       totalPrice,
       status: "pending",
       numberOfRooms: rooms.length,
@@ -325,16 +349,29 @@ exports.getAvailableRooms = async (req, res) => {
     if (!checkIn || !checkOut) {
       return res.status(400).json({ message: "Check-in and check-out dates are required" });
     }
+    const hotel = await Hotel.findOne();
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
+      return res.status(400).json({
+        message: "Hotel arrival and departure time not configured"
+      });
+    }
 
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
+
+    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+  const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
+
     const timeDiff = checkOutDate - checkInDate;
 
     if (timeDiff <= 0) {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
 
-    const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    // const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const nights = Math.round(
+      (new Date(checkOut) - new Date(checkIn)) / MS_PER_DAY
+    );
+
     const rooms = await Room.find();
     const availableRooms = [];
 
@@ -346,11 +383,9 @@ exports.getAvailableRooms = async (req, res) => {
           "rooms.roomId": room._id,
           "rooms.roomNumber": r.roomNumber,
           status: { $in: ["pending", "confirmed"] },
-          $or: [
-            { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
-            { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
-            { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } }
-          ]
+          checkIn: { $lt: checkOutDate },
+          checkOut: { $gt: checkInDate }
+
         }).lean();
 
         if (!conflictingBooking) {
@@ -437,9 +472,27 @@ exports.updateBooking = async (req, res) => {
     }
 
     // Check-in/check-out validation
-    const checkInDate = new Date(updates.checkIn || booking.checkIn);
-    const checkOutDate = new Date(updates.checkOut || booking.checkOut);
-    const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24));
+    const hotel = await Hotel.findOne();
+      if (!hotel) {
+        return res.status(400).json({ message: "Hotel settings missing" });
+      }
+
+     const checkInDate = updates.checkIn
+  ? buildDateTime(updates.checkIn, hotel.arrivalTime)
+  : booking.checkIn;
+
+const checkOutDate = updates.checkOut
+  ? buildDateTime(updates.checkOut, hotel.departureTime)
+  : booking.checkOut;
+
+
+
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const nights = Math.round(
+      (checkOutDate - checkInDate) / MS_PER_DAY
+    );
+
     if (nights <= 0) return res.status(400).json({ message: "Check-out must be after check-in" });
 
     // Rooms handling
@@ -462,7 +515,7 @@ exports.updateBooking = async (req, res) => {
         }
 
         // Check roomNumber conflicts
-        if (roomNumber !== "Yet to be assigned") {
+       if (roomNumber !== "Yet to be assigned") {
           const conflict = await Booking.findOne({
             _id: { $ne: booking._id },
             "rooms.roomId": r.roomId,
@@ -471,8 +524,10 @@ exports.updateBooking = async (req, res) => {
             checkOut: { $gt: checkInDate },
             status: { $in: ["pending", "confirmed"] }
           });
-          if (conflict) return res.status(400).json({ message: `Room ${roomNumber} is already booked for these dates` });
+          if (conflict) 
+            return res.status(400).json({ message: `Room ${roomNumber} is already booked for these dates` });
         }
+
 
         updatedRooms.push({ roomId: r.roomId, roomNumber, adults, children });
       }
@@ -491,8 +546,16 @@ exports.updateBooking = async (req, res) => {
       booking.totalPrice = totalPrice;
     }
 
+    // Apply checkIn/checkOut separately
+    if (updates.checkIn) booking.checkIn = checkInDate;
+    if (updates.checkOut) booking.checkOut = checkOutDate;
+
     // Apply other updates
-    Object.assign(booking, updates);
+    const otherFields = { ...updates };
+    delete otherFields.checkIn;
+    delete otherFields.checkOut;
+    Object.assign(booking, otherFields);
+
 
     await booking.save();
     res.json({ message: "Booking updated successfully", booking });
@@ -581,8 +644,15 @@ exports.getAvailableRoomNumbers = async (req, res) => {
       return res.status(400).json({ message: "roomId, checkIn, and checkOut are required" });
     }
 
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
+    const hotel = await Hotel.findOne();
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
+      return res.status(400).json({
+        message: "Hotel arrival and departure time not configured"
+      });
+    }
+
+    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+    const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
 
     if (checkOutDate <= checkInDate) {
       return res.status(400).json({ message: "Check-out must be after check-in" });
@@ -591,26 +661,21 @@ exports.getAvailableRoomNumbers = async (req, res) => {
     const roomDoc = await Room.findById(roomId);
     if (!roomDoc) return res.status(404).json({ message: "Room not found" });
 
-    // Prepare rooms with actual DB statuses (NOT booked)
     const allRooms = roomDoc.rooms.map(r => ({
       number: r.roomNumber,
       status: r.status || "available"
     }));
 
-    // Find overlapping booked rooms
+    // ✅ Correct overlap logic: room is blocked until departure time
     const overlappingBookedNumbers = await Booking.find({
       _id: { $ne: bookingId || null },
       "rooms.roomId": roomId,
       "rooms.roomNumber": { $in: allRooms.map(r => r.number) },
       status: { $in: ["pending", "confirmed"] },
-      $or: [
-        { checkIn: { $lt: checkOutDate }, checkOut: { $gt: checkInDate } } // THIS is correct overlap logic
-      ]
+      checkIn: { $lt: checkOutDate }, 
+      checkOut: { $gt: checkInDate } 
     }).distinct("rooms.roomNumber");
 
-    // Remove entries that:
-    // 1) are room.status = "not_available"
-    // 2) are in overlapping bookings
     const availableRooms = allRooms.filter(r =>
       r.status !== "not_available" &&
       !overlappingBookedNumbers.includes(r.number)
@@ -624,8 +689,6 @@ exports.getAvailableRoomNumbers = async (req, res) => {
   }
 };
 
-
-
 exports.getAvailableRoomNumbersByDate = async (req, res) => {
   try {
     const { roomId, checkIn, checkOut } = req.query;
@@ -634,41 +697,66 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
       return res.status(400).json({ message: "roomId, checkIn, and checkOut are required" });
     }
 
-    const checkInDate = new Date(checkIn);
-    const checkOutDate = new Date(checkOut);
-
-    if (checkOutDate <= checkInDate) {
-      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+    const hotel = await Hotel.findOne();
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
+      return res.status(400).json({
+        message: "Hotel arrival and departure time not configured"
+      });
     }
 
-    // 1️⃣ Fetch the room document
+    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+    const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
+
+    if (checkOutDate <= checkInDate) {
+      return res.status(400).json({ message: "Check-out must be after check-in" });
+    }
+
     const roomDoc = await Room.findById(roomId);
     if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
 
-    // 2️⃣ Get all room numbers for this room type
     const allRoomNumbers = roomDoc.rooms.map(r => r.roomNumber);
 
-    // 3️⃣ Find booked room numbers in the given date range
-    const bookedNumbers = await Booking.find({
-      "rooms.roomId": roomId,
-      "rooms.roomNumber": { $in: allRoomNumbers },
-      status: { $in: ["pending", "confirmed"] },
-      $or: [
-        { checkIn: { $lt: checkOutDate, $gte: checkInDate } },
-        { checkOut: { $gt: checkInDate, $lte: checkOutDate } },
-        { checkIn: { $lte: checkInDate }, checkOut: { $gte: checkOutDate } },
-      ],
-    }).distinct("rooms.roomNumber");
+    // Find bookings that overlap with the requested dates
+    const bookings = await Booking.find({
+  "rooms.roomId": roomId,
+  "rooms.roomNumber": { $in: allRoomNumbers },
+  status: { $in: ["pending", "confirmed"] },
+  checkIn: { $lt: checkOutDate },
+  checkOut: { $gt: checkInDate }
+})
+.select("rooms guestFirstName customerType user bookingId") // include bookingId
+.populate("user", "name");
 
-    // 4️⃣ Compute available room numbers
-    const availableRoomNumbers = allRoomNumbers.filter(num => !bookedNumbers.includes(num));
+let occupiedRoomNumbers = [];
+for (const booking of bookings) {
+  for (const r of booking.rooms) {
+    if (allRoomNumbers.includes(r.roomNumber)) {
+      const name = booking.customerType === "Guest"
+        ? `${booking.guestFirstName || ''}`.trim()
+        : (booking.user?.name || '').split(' ')[0]; // first name only
 
-    res.json({ availableRoomNumbers });
+      occupiedRoomNumbers.push({
+        roomNumber: r.roomNumber,
+        bookingName: name,
+        bookingId: booking._id.toString()
+      });
+    }
+  }
+}
+
+
+
+    // Available rooms are all minus the occupied numbers
+    const occupiedNumbersOnly = occupiedRoomNumbers.map(o => o.roomNumber);
+    const availableRoomNumbers = allRoomNumbers.filter(num => !occupiedNumbersOnly.includes(num));
+
+    res.json({ availableRoomNumbers, occupiedRoomNumbers });
   } catch (error) {
-    console.error("Error in getAvailableRoomNumbers:", error.message);
+    console.error("Error in getAvailableRoomNumbersByDate:", error.message);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 
 

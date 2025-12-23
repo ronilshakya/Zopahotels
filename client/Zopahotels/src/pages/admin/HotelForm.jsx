@@ -17,6 +17,8 @@ const HotelForm = ({ mode }) => {
     logo: null,
     currency: "USD",
     amenities: [""],
+    arrivalTime: "",
+    departureTime:"",
   });
   const [preview, setPreview] = useState(null);
   const [existingLogo, setExistingLogo] = useState(null);
@@ -52,6 +54,8 @@ const HotelForm = ({ mode }) => {
             logo: null,
             currency: hotel.currency || "USD",
             amenities: amenitiesArray.length ? amenitiesArray : [""],
+            arrivalTime: hotel.arrivalTime || "",
+            departureTime: hotel.departureTime || "",
           });
 
           setExistingLogo(hotel.logo ? `${API_URL}uploads/${hotel.logo}` : null);
@@ -92,7 +96,12 @@ const HotelForm = ({ mode }) => {
         if (key === "amenities") {
           formData.append(
             key,
-            JSON.stringify(hotelData[key].filter((a) => a.trim() !== ""))
+            JSON.stringify(hotelData[key].filter((a) => {
+              if (typeof a === "string") return a.trim() !== "";
+              if (typeof a === "object" && a.name) return a.name.trim() !== "";
+              return false;
+            })
+            )
           );
         } else if (hotelData[key] !== null) {
           formData.append(key, hotelData[key]);
@@ -240,12 +249,26 @@ const HotelForm = ({ mode }) => {
         <div className="grid grid-cols-2">
           <div>
             <label className="block mb-2 font-medium">Arrival Time</label>
-            <input type="time" placeholder="Arrival Time" className="border border-gray-300 p-2 rounded-lg" />
+            <input 
+              type="time" 
+              placeholder="Arrival Time" 
+              className="border border-gray-300 p-2 rounded-lg" 
+              value={hotelData.arrivalTime}
+              onChange={handleChange}
+              name="arrivalTime"
+              />
           </div>
         
           <div>
             <label className="block mb-2 font-medium">Departure Time</label>
-            <input type="time" placeholder="Departure Time" className="border border-gray-300 p-2 rounded-lg" />
+            <input 
+              type="time" 
+              placeholder="Departure Time" 
+              className="border border-gray-300 p-2 rounded-lg" 
+              name="departureTime"
+              value={hotelData.departureTime}
+              onChange={handleChange}
+            />
           </div>
         </div>
 

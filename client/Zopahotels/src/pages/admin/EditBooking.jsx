@@ -99,6 +99,8 @@ const EditBooking = () => {
     fetchBooking();
   }, [id, token, navigate, hotel]);
 
+  console.log(booking)
+
   // Fetch available room numbers
   useEffect(() => {
     const fetchAvailableNumbers = async () => {
@@ -453,20 +455,26 @@ const handleRemoveRoom = (index) => {
               <div className="mb-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Room Number</label>
                 <select
-                  value={room.roomNumber || ""}
-                  onChange={(e) => handleRoomNumberChange(room.roomId, index, e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">Select room number</option>
-                  <option value="Yet to be assigned">Yet to be assigned</option>
-                  {filteredOptions.length > 0 ? (
-                    filteredOptions.map(num => (
-                      <option key={num.number} value={num.number}>{num.number}</option>
-                    ))
-                  ) : (
-                    <option disabled>No rooms available</option>
-                  )}
-                </select>
+                    value={room.roomNumber || "Yet to be assigned"}
+                    onChange={(e) => handleRoomNumberChange(room.roomId, index, e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 bg-white rounded-md focus:ring-2 focus:ring-blue-500"
+                  >
+                    {/* Always include the current value */}
+                    {room.roomNumber && !filteredOptions.some(o => o.number === room.roomNumber) && (
+                      <option value={room.roomNumber}>{room.roomNumber}</option>
+                    )}
+
+                    <option value="Yet to be assigned">Yet to be assigned</option>
+
+                    {filteredOptions.length > 0 ? (
+                      filteredOptions.map(num => (
+                        <option key={num.number} value={num.number}>{num.number}</option>
+                      ))
+                    ) : (
+                      <option disabled>No rooms available</option>
+                    )}
+                  </select>
+
               </div>
 
               {/* Adults */}

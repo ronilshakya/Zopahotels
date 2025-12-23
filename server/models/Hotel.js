@@ -31,7 +31,15 @@ const hotelSchema = new mongoose.Schema({
         name: { type: String }, 
         icon: { type: String } 
         }
-    ]
+    ],
+    arrivalTime: { 
+        type: String,
+        default: "13:00" 
+    },
+    departureTime: {
+        type: String,
+        default: "12:00" 
+    },
     bookingSource: [String],
 },{timestamps:true});
 
