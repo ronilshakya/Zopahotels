@@ -14,9 +14,9 @@ import UserLayout from './pages/UserLayout';
 import RoomsPage from './pages/admin/RoomsPage';
 import AddRoom from './pages/admin/AddRoom';
 import EditRoomPage from './pages/admin/EditRoomPage';
-import AllBookings from './pages/admin/AllBookings';
+import AllBookings from './pages/admin/AllReservations';
 import AllUsers from './pages/admin/AllUsers';
-import AdminAddBooking from './pages/admin/AdminAddBooking';
+import AddReservation from './pages/admin/AddReservation';
 import EditBooking from './pages/admin/EditBooking';
 import AllAdmins from './pages/admin/AllAdmins';
 import Signup from './pages/user/Signup';
@@ -39,6 +39,11 @@ import BookingSource from './pages/admin/BookingSource';
 import RoomStatus from './pages/admin/RoomStatus';
 import BookingDetails from './pages/admin/BookingDetails';
 import NotFound from './pages/NotFound';
+import AllCheckins from './pages/admin/AllCheckins';
+import AllCheckouts from './pages/admin/AllCheckouts';
+import AllReservations from './pages/admin/AllReservations';
+import AddDirectCheckIn from './pages/admin/AddDirectCheckIn';
+import Checkout from './pages/admin/Checkout';
 
 // Wrapper to get `mode` from URL and pass as prop
 const HotelFormWrapper = () => {
@@ -83,9 +88,9 @@ export default function App() {
           <Route path="admin-rooms" element={<RoomsPage />} />
           <Route path="add-room" element={<AddRoom />} />
           <Route path="edit-room/:id" element={<EditRoomPage />} />
-          <Route path="all-bookings" element={<AllBookings />} />
+          <Route path="all-bookings" element={<AllReservations />} />
           <Route path="all-users" element={<AllUsers />} />
-          <Route path="add-booking" element={<AdminAddBooking />} />
+          <Route path="add-booking" element={<AddReservation />} />
           <Route path="edit-booking/:id" element={<EditBooking />} />
           <Route path="booking-details/:id" element={<BookingDetails />} />
           <Route path="all-admins" element={<AllAdmins />} />
@@ -98,6 +103,10 @@ export default function App() {
           <Route path="add-admin" element={<AddAdmin />} />
           <Route path="add-client" element={<AddClient />} />
           <Route path="room-status" element={<RoomStatus />} />
+          <Route path="check-in" element={<AllCheckins />} />
+          <Route path="check-out" element={<AllCheckouts />} />
+          <Route path="direct-check-in" element={<AddDirectCheckIn />} />
+          <Route path="check-out-page/:id" element={<Checkout />} />
 
           {/* Hotel form routes */}
           <Route path="hotel-form/:mode" element={<HotelFormWrapper />} />

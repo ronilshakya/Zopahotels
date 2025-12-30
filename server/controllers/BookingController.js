@@ -382,7 +382,7 @@ exports.getAvailableRooms = async (req, res) => {
         const conflictingBooking = await Booking.findOne({
           "rooms.roomId": room._id,
           "rooms.roomNumber": r.roomNumber,
-          status: { $in: ["pending", "confirmed"] },
+          status: { $in: ["pending", "confirmed", "checked_in"] },
           checkIn: { $lt: checkOutDate },
           checkOut: { $gt: checkInDate }
 
@@ -522,7 +522,7 @@ const checkOutDate = updates.checkOut
             "rooms.roomNumber": roomNumber,
             checkIn: { $lt: checkOutDate },
             checkOut: { $gt: checkInDate },
-            status: { $in: ["pending", "confirmed"] }
+            status: { $in: ["pending", "confirmed", "checked_in"] }
           });
           if (conflict) 
             return res.status(400).json({ message: `Room ${roomNumber} is already booked for these dates` });
@@ -576,6 +576,14 @@ exports.deleteBooking = async (req, res) => {
 
     if (!booking) {
       return res.status(404).json({ message: "Booking not found" });
+    }
+
+    if (booking.rooms && booking.rooms.length > 0) { 
+      await Room.updateMany( 
+        { "rooms.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }, 
+        { $set: { "rooms.$[elem].status": "available" } }, 
+        { arrayFilters: [{ "elem.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }] } 
+      ); 
     }
 
     await booking.deleteOne();
@@ -671,7 +679,7 @@ exports.getAvailableRoomNumbers = async (req, res) => {
       _id: { $ne: bookingId || null },
       "rooms.roomId": roomId,
       "rooms.roomNumber": { $in: allRooms.map(r => r.number) },
-      status: { $in: ["pending", "confirmed"] },
+      status: { $in: ["pending", "confirmed", "checked_in"] },
       checkIn: { $lt: checkOutDate }, 
       checkOut: { $gt: checkInDate } 
     }).distinct("rooms.roomNumber");
@@ -720,7 +728,7 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
     const bookings = await Booking.find({
   "rooms.roomId": roomId,
   "rooms.roomNumber": { $in: allRoomNumbers },
-  status: { $in: ["pending", "confirmed"] },
+  status: { $in: ["pending", "confirmed", "checked_in"] },
   checkIn: { $lt: checkOutDate },
   checkOut: { $gt: checkInDate }
 })
@@ -756,8 +764,6 @@ for (const booking of bookings) {
     res.status(500).json({ message: error.message });
   }
 };
-
-
 
 
 
@@ -802,6 +808,12 @@ exports.searchBookings = async (req, res) => {
           { guestLastName: { $regex: search, $options: "i" } },
           { guestPhone: { $regex: search, $options: "i" } },
           { guestEmail: { $regex: search, $options: "i" } },
+          {
+            $and: [ 
+              { guestFirstName: { $regex: search.split(" ")[0], $options: "i" } }, 
+              { guestLastName: { $regex: search.split(" ")[1] || "", $options: "i" } } 
+            ]
+          }
         ]
       };
       memberOrGuestQuery.push(guestQuery);
@@ -855,3 +867,334 @@ exports.searchBookings = async (req, res) => {
   }
 };
 
+exports.getCheckedInBookings = async (req, res) => {
+  try {
+    const { search = "", page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    let query = { status: "checked_in" };
+
+    // 🔍 Search logic
+    if (search) {
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } }
+        ]
+      }).select("_id");
+
+      const searchConditions = [];
+
+      // Member search
+      searchConditions.push({
+        customerType: "Member",
+        $or: [
+          { bookingId: { $regex: search, $options: "i" } },
+          ...(users.length
+            ? [{ user: { $in: users.map(u => u._id) } }]
+            : [])
+        ]
+      });
+
+      // Guest search
+      searchConditions.push({
+        customerType: "Guest",
+        $or: [
+          { bookingId: { $regex: search, $options: "i" } },
+          { guestFirstName: { $regex: search, $options: "i" } },
+          { guestLastName: { $regex: search, $options: "i" } },
+          { guestPhone: { $regex: search, $options: "i" } },
+          {
+            $and: [ 
+              { guestFirstName: { $regex: search.split(" ")[0], $options: "i" } }, 
+              { guestLastName: { $regex: search.split(" ")[1] || "", $options: "i" } } 
+            ]
+          }
+        ]
+      });
+
+      query.$and = [{ $or: searchConditions }];
+    }
+
+    const total = await Booking.countDocuments(query);
+
+    const bookings = await Booking.find(query)
+      .populate("user", "name phone")
+      .populate("rooms.roomId", "type price")
+      .sort({ checkIn: -1 })
+      .skip(Number(skip))
+      .limit(Number(limit));
+
+    res.status(200).json({
+      bookings,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Checked-in fetch error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+exports.getCheckedOutBookings = async (req, res) => {
+  try {
+    const { search = "", page = 1, limit = 10 } = req.query;
+    const skip = (page - 1) * limit;
+
+    let query = { status: "checked_out" };
+
+    // 🔍 Search logic
+    if (search) {
+      const users = await User.find({
+        $or: [
+          { name: { $regex: search, $options: "i" } },
+          { email: { $regex: search, $options: "i" } },
+          { phone: { $regex: search, $options: "i" } }
+        ]
+      }).select("_id");
+
+      const searchConditions = [];
+
+      // Member search
+      searchConditions.push({
+        customerType: "Member",
+        $or: [
+          { bookingId: { $regex: search, $options: "i" } },
+          ...(users.length
+            ? [{ user: { $in: users.map(u => u._id) } }]
+            : [])
+        ]
+      });
+
+      // Guest search
+      searchConditions.push({
+        customerType: "Guest",
+        $or: [
+          { bookingId: { $regex: search, $options: "i" } },
+          { guestFirstName: { $regex: search, $options: "i" } },
+          { guestLastName: { $regex: search, $options: "i" } },
+          { guestPhone: { $regex: search, $options: "i" } },
+          {
+            $and: [ 
+              { guestFirstName: { $regex: search.split(" ")[0], $options: "i" } }, 
+              { guestLastName: { $regex: search.split(" ")[1] || "", $options: "i" } } 
+            ]
+          }
+        ]
+      });
+
+      query.$and = [{ $or: searchConditions }];
+    }
+
+    const total = await Booking.countDocuments(query);
+
+    const bookings = await Booking.find(query)
+      .populate("user", "name phone")
+      .populate("rooms.roomId", "type price")
+      .sort({ checkIn: -1 })
+      .skip(Number(skip))
+      .limit(Number(limit));
+
+    res.status(200).json({
+      bookings,
+      pagination: {
+        total,
+        page: Number(page),
+        limit: Number(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Checked-in fetch error:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+};
+
+
+exports.createDirectCheckIn = async (req, res) => {
+  try {
+    const { 
+      customerType,
+      userId,
+      guestFirstName,
+      guestLastName,
+      guestEmail,
+      guestPhone,
+      guestAddress,
+      guestCity,
+      guestZipCode,
+      guestCountry,
+      rooms,        // Each room: { roomId, adults, children, roomNumber }
+      checkIn,
+      checkOut,
+      bookingSource
+    } = req.body;
+
+    // ✅ Validate customer type
+    if (!customerType || !["Member", "Guest"].includes(customerType)) {
+      return res.status(400).json({ message: "Customer type must be Member or Guest" });
+    }
+
+    if (customerType === "Guest") {
+      if (!guestFirstName || !guestLastName) return res.status(400).json({ message: "Guest first and last name required" });
+
+      if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      const query = [
+        guestEmail ? { email: guestEmail } : null,
+        guestPhone ? { phone: guestPhone } : null
+      ].filter(Boolean);
+
+      let conflictMember = null;
+      if (query.length > 0) {
+        conflictMember = await User.findOne({ $or: query });
+      }
+
+      if (conflictMember) {
+        return res.status(400).json({ message: "Guest email or phone conflicts with existing member" });
+      }
+
+    }
+
+    const hotel = await Hotel.findOne();
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
+      return res.status(400).json({ message: "Hotel settings missing" });
+    }
+
+    if (!rooms || rooms.length === 0) return res.status(400).json({ message: "At least one room must be selected" });
+
+    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+    const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
+
+    if (checkOutDate <= checkInDate) return res.status(400).json({ message: "Check-out must be after check-in" });
+
+    const MS_PER_DAY = 1000 * 60 * 60 * 24;
+    const nights = Math.round((checkOutDate - checkInDate) / MS_PER_DAY);
+
+    let totalPrice = 0;
+    const bookingRooms = [];
+
+    // ✅ Process each room
+    for (const r of rooms) {
+      const roomDoc = await Room.findById(r.roomId);
+      if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
+
+      const adults = Number(r.adults || 1);
+      const children = Number(r.children || 0);
+      const roomNumber = r.roomNumber || "Yet to be assigned";
+
+      // Capacity check
+      if (adults > roomDoc.adults || children > roomDoc.children) {
+        return res.status(400).json({
+          message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children`
+        });
+      }
+
+      // Room number conflict check
+      if (roomNumber !== "Yet to be assigned") {
+        const conflict = await Booking.findOne({
+          "rooms.roomId": r.roomId,
+          "rooms.roomNumber": roomNumber,
+          checkIn: { $lt: checkOutDate },
+          checkOut: { $gt: checkInDate },
+          status: { $in: ["pending", "confirmed", "checked_in"] }
+        });
+        if (conflict) return res.status(400).json({ message: `Room number ${roomNumber} is already booked for these dates` });
+      }
+
+      // Price calculation
+      const pricingEntry = roomDoc.pricing.find(p => p.adults === adults);
+      if (!pricingEntry) return res.status(400).json({ message: `No pricing for ${adults} adults in room ${roomDoc.type}` });
+      totalPrice += pricingEntry.price * nights;
+
+      bookingRooms.push({
+        roomId: r.roomId,
+        roomNumber,
+        adults,
+        children
+      });
+    }
+
+    // ✅ Create booking
+    const bookingPayload = {
+      customerType,
+      rooms: bookingRooms,
+      checkIn: checkInDate,
+      checkOut: checkOutDate,
+      totalPrice,
+      status: "checked_in",
+      numberOfRooms: bookingRooms.length,
+      bookingId: uuidv4().slice(0, 8),
+      bookingSource
+    };
+
+      Object.assign(bookingPayload, {
+        guestFirstName,
+        guestLastName,
+        guestEmail,
+        guestCity,
+        guestZipCode,
+        guestCountry,
+        guestPhone,
+        guestAddress
+      });
+
+    const booking = await Booking.create(bookingPayload);
+
+    res.status(201).json({ message: "Direct check-in created", booking });
+
+  } catch (error) {
+    console.error("createDirectCheckIn error:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+exports.updateBookingStatus = async (req, res) => {
+  try {
+    const { bookingId, newStatus } = req.body;
+    const booking = await Booking.findById(bookingId).populate("rooms");
+
+    if (!booking) { return res.status(404).json({ error: "Booking not found" }); }
+
+    booking.status = newStatus; 
+    await booking.save(); // Apply room status transitions 
+    
+   if (newStatus === "checked_in") {
+      await Room.updateMany(
+        { "rooms.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } },
+        { $set: { "rooms.$[elem].status": "not_available" } },
+        { arrayFilters: [{ "elem.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }] }
+      );
+    }
+
+    if (newStatus === "checked_out") {
+      await Room.updateMany(
+        { "rooms.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } },
+        { $set: { "rooms.$[elem].status": "dirty" } },
+        { arrayFilters: [{ "elem.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }] }
+      );
+    }
+
+    if (newStatus === "no_show" || newStatus === "cancelled") {
+      await Room.updateMany(
+        { "rooms.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } },
+        { $set: { "rooms.$[elem].status": "available" } },
+        { arrayFilters: [{ "elem.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }] }
+      );
+    }
+
+    return res.json(booking);
+  } catch (error) {
+    console.error("Error updating booking status:", error);
+    throw error;
+  }
+}

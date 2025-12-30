@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { deleteBooking, searchBookings } from '../../api/bookingApi';
+import { deleteBooking, searchBookings, updateBookingStatus } from '../../api/bookingApi';
 import { useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 import Swal from 'sweetalert2';
@@ -8,9 +8,11 @@ import { useHotel } from '../../context/HotelContext';
 import { FiEdit } from "react-icons/fi";
 import { MdDelete } from "react-icons/md";
 import { MdOutlineOpenInNew } from "react-icons/md";
+import { TbCancel } from "react-icons/tb";
+import { FaUserAltSlash } from "react-icons/fa";
 
 
-const AllBookings = () => {
+const AllReservations = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState('');
@@ -20,6 +22,7 @@ const AllBookings = () => {
 
   
   const { hotel } = useHotel();
+  const user = JSON.parse(localStorage.getItem("adminUser"));
   const token = localStorage.getItem('adminToken');
   const navigate = useNavigate();
 
@@ -83,6 +86,40 @@ const AllBookings = () => {
     });
   };
 
+  const handleBookingStatusChange = async(bookingId, action) =>{
+        Swal.fire({
+          title: `Are you sure you want to ${action === 'cancelled' ? 'cancel':'no-show'} this booking?`,
+          text: "This action cannot be undone.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "Yes",
+        }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+           await updateBookingStatus({token,payload:{bookingId: bookingId, newStatus: action}});
+           await fetchBookings(pagination.page);
+           Swal.fire({
+            title: "Success",
+            text: `The booking has been ${action === 'cancelled' ? 'cancelled':'no-showed'}.`,
+            icon: "success",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+          } catch (error) {
+            Swal.fire({
+            title: "Error!",
+            text: `Failed to ${action === 'cancelled' ? 'cancel':'no-show'} booking. Try again.`,
+            icon: "error",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+          }
+        }
+      })
+  }
+
   const handlePageChange = (newPage) => {
     fetchBookings(newPage);
   };
@@ -98,8 +135,8 @@ const AllBookings = () => {
     <div className="min-h-screen bg-gray-100 p-6">
       <div className="max-w-6xl mx-auto bg-white rounded-lg shadow-lg p-6">
         <div className="flex justify-between items-baseline mb-6">
-          <h2 className="text-2xl font-bold text-gray-800">All Bookings</h2>
-          <Button onClick={() => navigate("/admin/add-booking")}>Add Booking</Button>
+          <h2 className="text-2xl font-bold text-gray-800">All Reservations</h2>
+          <Button onClick={() => navigate("/admin/add-booking")}>Add Reservation</Button>
         </div>
 
         {/* Search & Filter */}
@@ -142,6 +179,7 @@ const AllBookings = () => {
                 <tr className="bg-gray-200 text-gray-700">
                   <th className="px-4 py-3 text-left font-semibold text-sm">User</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Room(s)</th>
+                  <th className="px-4 py-3 text-left font-semibold text-sm">Room No.</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Check-In</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Check-Out</th>
                   <th className="px-4 py-3 text-left font-semibold text-sm">Total Price</th>
@@ -172,24 +210,78 @@ const AllBookings = () => {
                     <td className="px-4 py-3 text-gray-600 text-sm ">
                       <ul className='list-disc'>
                         {booking.rooms.map((r, i) => (
-                          <li key={i} className='w-[200px]'>{r.roomId?.type} - {r.roomNumber}</li>
+                          <li key={i} className='w-[200px]'>{r.roomId?.type}</li>
+                        ))}
+                      </ul>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 text-sm ">
+                      <ul className='list-disc'>
+                        {booking.rooms.map((r, i) => (
+                          <li key={i} className=''>{r.roomNumber === 'Yet to be assigned' ? 'N/A' : r.roomNumber}</li>
                         ))}
                       </ul>
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkIn).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkOut).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</td>
-                    <td className="px-4 py-3 text-gray-600 text-sm">{booking.status}</td>
+
+                    <td className="px-4 py-3 text-white text-sm">
+                      <p className={`p-1 rounded-md
+                        ${booking.status === 'pending' && 'bg-amber-400'} 
+                        ${(booking.status === 'checked_out' || booking.status === 'checked_in') && 'bg-green-500'} 
+                        ${booking.status === 'cancelled' && 'bg-red-500'} 
+                        ${booking.status === 'no_show' && 'bg-gray-500'} 
+                        `
+                      }>
+                        {booking.status === 'pending' && 'Pending'} 
+                        {booking.status === 'checked_out' && 'Checked Out'} 
+                        {booking.status === 'checked_in' && 'Checked In'}
+                        {booking.status === 'cancelled' && 'Cancelled'} 
+                        {booking.status === 'no_show' && 'No Show'} 
+                      </p>
+                    </td>
                     <td className="px-4 py-3">
-                      <div className="flex gap-2">
+                      <div className="p-3 flex gap-2">
                         <button 
                           onClick={() => navigate(`/admin/booking-details/${booking._id}`)} 
                           className="px-2 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+                          title='View Details'
                         >
                           <MdOutlineOpenInNew />
                         </button>
-                        <button onClick={() => navigate(`/admin/edit-booking/${booking._id}`)} className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"><FiEdit /></button>
-                        <button onClick={() => handleDeleteBooking(booking._id)} className="px-2 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"><MdDelete /></button>
+
+                        <button 
+                          onClick={() => navigate(`/admin/edit-booking/${booking._id}`)} 
+                          className="px-2 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                          title='Edit Booking'
+                        >
+                            <FiEdit />
+                        </button>
+
+                        <button 
+                          onClick={() => handleBookingStatusChange(booking._id, "no_show")} 
+                          className="px-2 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700"
+                          title='No Show'
+                        >
+                            <FaUserAltSlash />
+                        </button>
+
+                        <button 
+                          onClick={() => handleBookingStatusChange(booking._id, "cancelled")} 
+                          className="px-2 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                          title='Cancel Booking'
+                        >
+                            <TbCancel />
+                        </button>
+
+                        {user.role === 'admin' && (
+                          <button 
+                            onClick={() => handleDeleteBooking(booking._id)} 
+                            className="px-2 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                            title='Delete Booking'>
+                              <MdDelete />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -216,4 +308,4 @@ const AllBookings = () => {
   );
 };
 
-export default AllBookings;
+export default AllReservations;

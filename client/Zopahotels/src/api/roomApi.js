@@ -71,3 +71,20 @@ export const deleteRoom = async (id, token) => {
     throw error;
   }
 };
+
+export const updateRoomCleaningStatus = async (roomNumber, action, token) => {
+  try{
+    const res = await axios.put(`${API_URL_EXTENDED}/update-room-cleaning-status`, 
+    { roomNumber, action },
+    {
+      headers: {  
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return res.data;
+  }catch(err){
+    console.error(err);
+    throw err;
+  }
+}

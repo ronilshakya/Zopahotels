@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {createRoom, getAllRooms, getRoomById, updateRoom, deleteRoom} = require('../controllers/roomController');
+const {createRoom, getAllRooms, getRoomById, updateRoom, deleteRoom, updateRoomCleaningStatus} = require('../controllers/roomController');
 const {auth,isAdmin} = require('../middleware/authMiddleware');
 const multer = require('multer');
 const path = require("path");
@@ -30,6 +30,7 @@ const upload = multer({ storage, fileFilter });
 
 router.get('/', getAllRooms);
 
+router.put('/update-room-cleaning-status',auth,isAdmin,updateRoomCleaningStatus);
 router.post('/', auth, isAdmin, upload.array("images"), createRoom);
 router.put('/:id', auth, isAdmin,upload.array("images"), updateRoom);
 router.delete('/:id',auth,isAdmin,deleteRoom);

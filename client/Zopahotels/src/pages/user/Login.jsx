@@ -10,6 +10,7 @@ const Login = () => {
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
+  const [loading, setLoading] = useState(false);
   const widgetRef = useRef(null); // store widget ID for reset
 
   useEffect(() => {
@@ -43,6 +44,7 @@ const Login = () => {
       return;
     }
     try {
+      setLoading(true);
       const data = await login({ ...form, turnstileToken: captchaToken });
       localStorage.setItem("authToken", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
@@ -53,6 +55,8 @@ const Login = () => {
       if (window.turnstile && widgetRef.current !== null) {
         window.turnstile.reset(widgetRef.current); // reset widget for retry
       }
+    }finally{
+      setLoading(false);
     }
   };
 
@@ -103,7 +107,7 @@ const Login = () => {
             type="submit"
             className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition duration-200 font-semibold"
           >
-            Login
+            {loading ? 'Loading...': 'Login'}
           </button>
         </form>
         <div className="mt-6 text-center">

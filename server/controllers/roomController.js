@@ -219,3 +219,20 @@ exports.deleteRoom = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+exports.updateRoomCleaningStatus = async (req, res) => { 
+  try { 
+    const { roomNumber, action } = req.body; 
+    let newStatus; 
+    if (action === "start_cleaning") newStatus = "cleaning_in_progress"; 
+    if (action === "finish_cleaning") newStatus = "available"; 
+    const updated = await Room.updateOne( 
+      { "rooms.roomNumber": roomNumber }, 
+      { $set: { "rooms.$.status": newStatus } } 
+    ); 
+    return res.json(updated); 
+  } 
+  catch (err) { 
+    console.error(err); return res.status(500).json({ error: err.message }); 
+  } 
+};

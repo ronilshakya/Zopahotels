@@ -23,11 +23,12 @@ const RoomSchema = new mongoose.Schema({
         {
             roomNumber:{
                 type:String,
-                required:true
+                required:true,
+                unique:true
             },
             status: { 
                 type: String, 
-                enum: ['available', 'not_available'], 
+                enum: ['available', 'not_available','maintenance', 'dirty','cleaning_in_progress'], 
                 default: 'available' 
             }
         }

@@ -16,7 +16,14 @@ const AdminSidebar = () => {
   const links = [
     { to: "/admin/dashboard", label: "Dashboard" },
     { to: "/admin/room-status", label: "Rooms Status" },
-    { to: "/admin/all-bookings", label: "Bookings" },
+    { 
+      label: "Bookings",
+      submenu: [
+        { to: "/admin/all-bookings", label: "Reservations" },
+        { to: "/admin/check-in", label: "Check-In" },
+        { to: "/admin/check-out", label: "Check-Out" },
+      ] 
+    },
     { to: "/admin/all-users", label: "Customers" },
     ...(user?.role === "admin" ? [{ to: "/admin/all-admins", label: "Users" }] : []),
     { to: "/admin/booking-calender", label: "Calender" },
@@ -24,9 +31,9 @@ const AdminSidebar = () => {
     ...(user?.role === "admin"
     ? [
         {
-          to: "/admin/settings",
           label: "Settings",
           submenu: [
+            { to: "/admin/settings", label: "Hotel" },
             { to: "/admin/amenities", label: "Amenities" },
             { to: "/admin/booking-sources", label: "Booking Sources" },
             { to: "/admin/admin-rooms", label: "Rooms" },
@@ -100,7 +107,7 @@ const AdminSidebar = () => {
           isOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:w-64 z-40`}
       >
-        <div className="p-4 border-b border-gray-700">
+        <div className="p-4 border-b border-gray-400">
           {hotel?(
             <img src={`${API_URL}uploads/${hotel.logo}`} className="w-50" alt="logo" />
           ):(
@@ -111,49 +118,65 @@ const AdminSidebar = () => {
           <ul className="space-y-2">
 
             {links.map((link) => (
-  <li key={link.to}>
-    <NavLink
-      to={link.to}
-      className={({ isActive }) =>
-        `flex p-2 justify-between items-center rounded-md transition duration-200 ${
-          isActive ? "bg-blue-600 text-white" : "hover:bg-blue-100"
-        }`
-      }
-      onClick={() => handleLinkClick(link)}
-    >
-      {link.label}
-      {link.submenu && (
-      <RiArrowDropDownLine
-        size={30}
-        className={`transition-transform duration-200 ${
-          openSubmenu === link.to ? "-rotate-90" : "rotate-0"
-        }`}
-      />
-)}
+            <li key={link.to || link.label}>
+              {link.submenu ? (
+                <button
+                  type="button"
+                  className={`flex w-full text-sm p-2 justify-between items-center rounded-md transition duration-200 ${
+                    openSubmenu === link.label ? "bg-blue-600 text-white" : "hover:bg-blue-100 bg-gray-100"
+                  }`}
+                  onClick={() =>
+                    setOpenSubmenu(openSubmenu === link.label ? null : link.label)
+                  }
+                >
+                  {link.label}
+                  <RiArrowDropDownLine
+                    size={30}
+                    className={`transition-transform duration-200 ${
+                      openSubmenu === link.label ? "-rotate-90" : "rotate-0"
+                    }`}
+                  />
+                </button>
+              ) : (
+                <NavLink
+                  to={link.to}
+                  className={({ isActive }) =>
+                    `flex p-2 justify-between text-sm items-center rounded-md transition duration-200 ${
+                      isActive ? "bg-blue-600 text-white" : "hover:bg-blue-100 bg-gray-100"
+                    }`
+                  }
+                  onClick={() => handleLinkClick(link)}
+                >
+                  {link.label}
+                </NavLink>
+              )}
 
-    </NavLink>
-
-      {link.submenu && (
-        <ul className={`pl-4 mt-2 space-y-1 ${openSubmenu === link.to ? "block" : "hidden"}`}>
-          {link.submenu.map((sublink) => (
-            <li key={sublink.to}>
-              <NavLink
-                to={sublink.to}
-                className={({ isActive }) =>
-                  `block p-2 rounded-md transition duration-200 ${
-                    isActive ? "bg-blue-600 text-white" : "hover:bg-blue-100"
-                  }`
-                }
-                onClick={() => setIsOpen(false)}
-              >
-                {sublink.label}
-              </NavLink>
+              {link.submenu && (
+                <ul
+                  className={`pl-4 mt-2 space-y-1 ${
+                    openSubmenu === link.label ? "block" : "hidden"
+                  }`}
+                >
+                  {link.submenu.map((sublink) => (
+                    <li key={sublink.to}>
+                      <NavLink
+                        to={sublink.to}
+                        className={({ isActive }) =>
+                          `block p-2 text-sm rounded-md transition duration-200 ${
+                            isActive ? "bg-blue-600 text-white" : "hover:bg-blue-100 bg-gray-100"
+                          }`
+                        }
+                        onClick={() => setIsOpen(false)}
+                      >
+                        {sublink.label}
+                      </NavLink>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
-          ))}
-        </ul>
-      )}
-    </li>
-  ))}
+            ))}
+
 
           </ul>
         </nav>

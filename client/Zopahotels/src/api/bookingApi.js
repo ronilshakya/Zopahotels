@@ -145,12 +145,68 @@ export const createBookingAdmin = async ({ payload, token }) => {
     throw error;
   }
 };
+
+export const createDirectCheckIn = async ({ payload, token }) => {
+  try {
+    const res = await axios.post(`${API_URL_EXTENDED}/direct-check-in`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+
 export const searchBookings = async (token, search = '', startDate = '', endDate = '', page = 1, limit = 10) => {
   try {
     const params = { search, startDate, endDate, page, limit };
     const res = await axios.get(`${API_URL_EXTENDED}/search-bookings`, {
       headers: { Authorization: `Bearer ${token}` },
       params
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const checkedInBookings = async (token, search='', page = 1, limit = 10) => {
+  try {
+    const params = { search,page, limit };
+    const res = await axios.get(`${API_URL_EXTENDED}/checked-in`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+export const checkedOutBookings = async (token, search='', page = 1, limit = 10) => {
+  try {
+    const params = { search,page, limit };
+    const res = await axios.get(`${API_URL_EXTENDED}/checked-out`, {
+      headers: { Authorization: `Bearer ${token}` },
+      params
+    });
+    return res.data;
+  } catch (error) {
+    console.error(error.response?.data || error.message);
+    throw error;
+  }
+};
+
+export const updateBookingStatus = async ({ token, payload }) => {
+  try {
+    const res = await axios.put(`${API_URL_EXTENDED}/update-booking-status`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
     return res.data;
   } catch (error) {

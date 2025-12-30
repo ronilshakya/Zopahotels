@@ -9,6 +9,7 @@ const AdminLogin = () => {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
+  const [loading, setLoading] = useState(false);
   const widgetRef = useRef(null); // store Turnstile widget ID
   const navigate = useNavigate();
   const { hotel } = useHotel();
@@ -23,6 +24,7 @@ const AdminLogin = () => {
     }
 
     try {
+      setLoading(true);
       const res = await axios.post(`${API_URL}api/users/login`, {
         email,
         password,
@@ -48,6 +50,8 @@ const AdminLogin = () => {
       if (window.turnstile && widgetRef.current !== null) {
         window.turnstile.reset(widgetRef.current);
       }
+    } finally{
+      setLoading(false)
     }
   };
 
@@ -106,7 +110,7 @@ const AdminLogin = () => {
             type="submit"
             className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition duration-200"
           >
-            Login
+            {loading ? 'Loading...': 'Login'}
           </button>
         </form>
       </div>

@@ -50,7 +50,7 @@ const BookingDetails = () => {
             <h2 className="text-2xl font-bold text-gray-800">Booking Details</h2>
             <div className="no-print flex gap-1">
                 <Button onClick={() => navigate(`/admin/edit-booking/${booking._id}`)}><FiEdit/></Button>
-                <Button onClick={() => navigate("/admin/all-bookings")} className=""><IoArrowBackSharp /></Button>
+                {/* <Button onClick={() => navigate("/admin/all-bookings")} className=""><IoArrowBackSharp /></Button> */}
                 <Button onClick={() => window.print()} className=" text-white"><RiPrinterLine /></Button>
             </div>
         </div>
