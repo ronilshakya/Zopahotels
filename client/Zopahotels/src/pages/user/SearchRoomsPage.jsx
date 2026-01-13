@@ -126,9 +126,9 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
 
 
   const handleBookSelectedRooms = () => {
- const selectedRooms = availableRooms.flatMap(room => {
-  const occupancies = Array.isArray(roomOccupancy[room.roomId]) ? roomOccupancy[room.roomId] : [];
-  return occupancies.map(occ => {
+    const selectedRooms = availableRooms.flatMap(room => {
+    const occupancies = Array.isArray(roomOccupancy[room.roomId]) ? roomOccupancy[room.roomId] : [];
+    return occupancies.map(occ => {
     const adultsCount = occ?.adults ?? form.adults;
     const childrenCount = occ?.children ?? 0;
     const pricingEntry = room.pricing.find(p => p.adults === adultsCount);
@@ -137,8 +137,8 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
       roomId: room.roomId,
       adults: adultsCount,
       children: childrenCount,
-      pricePerNight: pricingEntry?.price || 0,
-      totalPrice: (pricingEntry?.price || 0) * room.nights,
+      pricePerNight: pricingEntry?.converted.USD || 0,
+      totalPrice: (pricingEntry?.converted.USD || 0) * room.nights,
       type: room.type
     };
   });
@@ -158,8 +158,6 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
   });
 
 };
-
-
 
 
   return (
@@ -334,7 +332,7 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
   <option value="">Select Adults</option>
   {room.pricing.map(p => (
     <option key={p.adults} value={p.adults}>
-      {p.adults} Adult{p.adults > 1 ? "s" : ""} – ${p.price}/night
+      {p.adults} Adult{p.adults > 1 ? "s" : ""} – ${p.converted.USD}/night
     </option>
   ))}
 </select>
@@ -374,33 +372,33 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
 
                   <div className="flex justify-between items-center mt-4">
               {(() => {
-  const raw = roomOccupancy[room.roomId];
-  const occupancies = Array.isArray(raw) ? raw : raw ? [raw] : [];
+              const raw = roomOccupancy[room.roomId];
+              const occupancies = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
-  const totalPrice = occupancies.reduce((sum, occ) => {
-    const adultsCount = occ?.adults ?? form.adults;
-    const pricingEntry = Array.isArray(room.pricing)
-      ? room.pricing.find(p => p.adults === adultsCount)
-      : null;
+              const totalPrice = occupancies.reduce((sum, occ) => {
+                const adultsCount = occ?.adults ?? form.adults;
+                const pricingEntry = Array.isArray(room.pricing)
+                  ? room.pricing.find(p => p.adults === adultsCount)
+                  : null;
 
-    return sum + (pricingEntry?.price || 0) * room.nights;
-  }, 0);
+                return sum + (pricingEntry?.price || 0) * room.nights;
+              }, 0);
 
-  return (
-    <>
-      {occupancies.length > 0 && (
-        <span className="text-lg font-bold text-blue-600">${totalPrice}</span>
-      )}
+              return (
+                <>
+                  {occupancies.length > 0 && (
+                    <span className="text-lg font-bold text-blue-600">${totalPrice}</span>
+                  )}
 
-      <span
-        className="text-blue-600 font-semibold underline cursor-pointer"
-        onClick={() => viewRoomModal(room)}
-      >
-        View Details
-      </span>
-    </>
-  );
-})()}
+                  <span
+                    className="text-blue-600 font-semibold underline cursor-pointer"
+                    onClick={() => viewRoomModal(room)}
+                  >
+                    View Details
+                  </span>
+                </>
+              );
+            })()}
 
 
 
@@ -418,20 +416,20 @@ setAvailableRooms(roomsWithImages.filter(r => r !== null));
             <span className="text-xl font-bold">
               Total: $
               {availableRooms.reduce((acc, room) => {
-  const raw = roomOccupancy[room.roomId];
-  const occupancies = Array.isArray(raw) ? raw : raw ? [raw] : [];
+              const raw = roomOccupancy[room.roomId];
+              const occupancies = Array.isArray(raw) ? raw : raw ? [raw] : [];
 
-  const subtotal = occupancies.reduce((sum, occ) => {
-    const adultsCount = occ?.adults ?? form.adults;
-    const pricingEntry = Array.isArray(room.pricing)
-      ? room.pricing.find(p => p.adults === adultsCount)
-      : null;
+              const subtotal = occupancies.reduce((sum, occ) => {
+                const adultsCount = occ?.adults ?? form.adults;
+                const pricingEntry = Array.isArray(room.pricing)
+                  ? room.pricing.find(p => p.adults === adultsCount)
+                  : null;
 
-    return sum + (pricingEntry?.price || 0) * room.nights;
-  }, 0);
+                return sum + (pricingEntry?.converted.USD || 0) * room.nights;
+              }, 0);
 
-  return acc + subtotal;
-}, 0)}
+              return acc + subtotal;
+            }, 0).toFixed(2)}
 
 
 

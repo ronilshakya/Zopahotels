@@ -85,6 +85,7 @@ const AllReservations = () => {
       }
     });
   };
+  
 
   const handleBookingStatusChange = async(bookingId, action) =>{
         Swal.fire({
@@ -129,6 +130,8 @@ const AllReservations = () => {
       <img src={preloader} className="w-16" alt="preloader" />
     </div>
   );
+
+  console.log(hotel)
 
 
   return (
@@ -223,12 +226,19 @@ const AllReservations = () => {
                     </td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkIn).toLocaleDateString()}</td>
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(booking.checkOut).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-gray-600 text-sm">{hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</td>
+                    <td className="px-4 py-3 text-gray-600 text-sm">
+                      {hotel.currency === "NPR" ?(
+                          <p>Rs. {booking.totalPrice}</p>
+                      ):(
+                        <p>$ {(booking.totalPriceUSD || booking.totalPrice).toFixed(2)}</p>
+                      )}
+                    </td>
 
                     <td className="px-4 py-3 text-white text-sm">
                       <p className={`p-1 rounded-md
                         ${booking.status === 'pending' && 'bg-amber-400'} 
-                        ${(booking.status === 'checked_out' || booking.status === 'checked_in') && 'bg-green-500'} 
+                        ${booking.status === 'checked_in' && 'bg-green-600'} 
+                        ${booking.status === 'checked_out' && 'bg-teal-600'} 
                         ${booking.status === 'cancelled' && 'bg-red-500'} 
                         ${booking.status === 'no_show' && 'bg-gray-500'} 
                         `

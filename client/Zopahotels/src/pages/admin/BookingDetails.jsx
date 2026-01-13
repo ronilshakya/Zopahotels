@@ -70,7 +70,13 @@ const BookingDetails = () => {
                     ))}
                     </ul>
                 </div>
-                <p><strong>Total Price:</strong> {hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</p>
+                <p><strong>Total Price:</strong>
+                    {hotel.currency === "NPR" ? (
+                      "Rs " + booking.totalPrice
+                    ):(
+                      "$" +booking.totalPriceUSD.toFixed(2)
+                    )}
+                </p>
             </div>
             <div className="space-y-4">
 

@@ -10,8 +10,25 @@ const RoomSchema = new mongoose.Schema({
     },
     pricing: [
         {
-        adults: { type: Number, required: true, min: 1 },
-        price: { type: Number, required: true, min: 0 }
+            adults: { 
+                type: Number, 
+                required: true, 
+                min: 1 
+            },
+            price: { 
+                type: Number, 
+                required: true, 
+                min: 0 
+            },
+            currency:{
+                type: String,
+                default: "NPR"
+            },
+            converted: { 
+                USD: { 
+                    type: Number 
+                } 
+            }
         }
     ],
     children:{

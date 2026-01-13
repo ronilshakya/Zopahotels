@@ -33,7 +33,8 @@ const BookingCalendar = () => {
         const formatted = data.map((booking) => {
           let color = "gray";
 
-          if (booking.status === "confirmed" || booking.status === "checked_in" || booking.status === "checked_out") color = "green";
+          if (booking.status === "confirmed" || booking.status === "checked_in") color = "green";
+          else if (booking.status === "checked_out") color = "teal";
           else if (booking.status === "pending") color = "orange";
           else if (booking.status === "no_show") color = "gray";
           else if (booking.status === "cancelled") color = "red";

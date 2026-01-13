@@ -5,6 +5,7 @@ import Button from "../../components/Button";
 import { useNavigate } from "react-router-dom";
 import preloader from '../../assets/preloader.gif';
 import Chart from "react-apexcharts";
+import { useHotel } from "../../context/HotelContext";
 
 const AdminDashboard = () => {
   const [arrivals, setArrivals] = useState([]);
@@ -15,6 +16,7 @@ const AdminDashboard = () => {
   const token = localStorage.getItem("adminToken");
   const navigate = useNavigate();
   const [monthlyStats, setMonthlyStats] = useState({ labels: [], data: [], revenue: [] });
+  const {hotel} = useHotel();
 
 
   useEffect(() => {
@@ -70,7 +72,7 @@ const AdminDashboard = () => {
         const monthlyRevenue = {};
         bookings.forEach((b) => {
           const month = new Date(b.createdAt).toLocaleString("default", { month: "short" });
-          monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (b.totalPrice || 0);
+          monthlyRevenue[month] = (monthlyRevenue[month] || 0) + (hotel.currency === "NPR" ? b.totalPrice : b.totalPriceUSD || 0);
         });
 
         setMonthlyStats({

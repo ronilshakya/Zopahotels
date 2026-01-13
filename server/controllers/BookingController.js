@@ -3,6 +3,8 @@ const Booking = require("../models/Booking");
 const Room = require("../models/Room");
 const User = require("../models/User");
 const Hotel = require("../models/Hotel");
+const {POS} = require("../models/Pos");
+const Cart = require("../models/Cart");
 const { v4: uuidv4 } = require("uuid");
 
 const buildDateTime = (dateStr, timeStr) => {
@@ -16,48 +18,25 @@ const buildDateTime = (dateStr, timeStr) => {
 exports.createBooking = async (req, res) => {
   try {
     const { 
-      customerType, 
-      guestFirstName, 
-      guestLastName, 
-      guestEmail,
-      guestCity,
-      guestZipCode,
-      guestCountry, 
-      guestPhone, 
-      guestAddress, 
+      customerType,
       rooms, 
       checkIn, 
-      checkOut,
-      children
+      checkOut
     } = req.body;
 
-    let userId = null;
-
-    if (!customerType || !["Member", "Guest"].includes(customerType)) {
-      return res.status(400).json({ message: "Invalid customer type" });
+   if (!customerType || customerType !== "Member") { 
+    return res.status(400).json({ message: "Only Member bookings are allowed here" }); 
+  } 
+  
+    const userId = req.user?.id || req.user?._id;
+    if (!userId) {
+      return res.status(401).json({ message: "User authentication required for member bookings" });
     }
 
-    if (customerType === "Member") {
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ message: "User authentication required for member bookings" });
-      }
-      userId = req.user.id;
-    }
 
-    if (customerType === "Guest") {
-      if (!guestFirstName || !guestLastName || !guestCity || !guestCountry || !guestAddress) {
-        return res.status(400).json({ message: "Guest name, city, country, and address are required" });
-      }
-      if (guestEmail && !/^\S+@\S+\.\S+$/.test(guestEmail)) {
-        return res.status(400).json({ message: "Invalid email format" });
-      }
-    }
-
-    const hotel = await Hotel.findOne();
-    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) {
-      return res.status(400).json({
-        message: "Hotel arrival and departure time not configured"
-      });
+    const hotel = await Hotel.findOne(); 
+    if (!hotel || !hotel.arrivalTime || !hotel.departureTime) { 
+      return res.status(400).json({ message: "Hotel arrival and departure time not configured" }); 
     }
 
 
@@ -67,79 +46,63 @@ exports.createBooking = async (req, res) => {
 
     const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
     const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
+    const timeDiff = checkOutDate.getTime() - checkInDate.getTime(); 
 
-    const timeDiff = checkOutDate.getTime() - checkInDate.getTime();
+    if (timeDiff <= 0) { 
+      return res.status(400).json({ message: "Check-out date must be after check-in date" }); 
+    } 
 
-    if (timeDiff <= 0) {
-      return res.status(400).json({ message: "Check-out date must be after check-in date" });
+    const today = new Date(); 
+    today.setHours(0, 0, 0, 0); 
+    if (checkInDate < today) { 
+      return res.status(400).json({ message: "Check-in date cannot be in the past" }); 
     }
 
-    if (checkInDate < new Date()) {
-      return res.status(400).json({ message: "Check-in date cannot be in the past" });
-    }
-
-    const nights = Math.round(timeDiff / (1000 * 60 * 60 * 24));
-    let totalPrice = 0;
-    const bookingRooms = [];
-
-    for (const r of rooms) {
-      const roomDoc = await Room.findById(r.roomId);
-      if (!roomDoc) return res.status(404).json({ message: "Room type not found" });
-
-      const quantity = Number(r.quantity || 1);
-
-      // Capacity check
-      if (r.adults > roomDoc.adults || r.children > roomDoc.children) {
-        return res.status(400).json({
-          message: `Room ${roomDoc.type} cannot accommodate ${r.adults} adults and ${r.children} children`
-        });
+    
+    const MS_PER_DAY = 1000 * 60 * 60 * 24; 
+    const nights = Math.round((new Date(checkOut) - new Date(checkIn)) / MS_PER_DAY); 
+    let totalPrice = 0; 
+    let totalPriceUSD = 0; 
+    const bookingRooms = []; 
+    for (const r of rooms) { 
+      const roomDoc = await Room.findById(r.roomId); 
+      if (!roomDoc) return res.status(404).json({ message: "Room type not found" }); 
+      const quantity = Number(r.quantity || 1); 
+      const adults = Number(r.adults || 1); 
+      const children = Number(r.children || 0);  
+      if (adults > roomDoc.adults || children > roomDoc.children) { 
+        return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` }); 
+      } 
+      const pricingEntry = roomDoc.pricing.find(p => p.adults === adults); 
+      if (!pricingEntry) { 
+        return res.status(400).json({ message: `No pricing defined for ${adults} adults in room type ${roomDoc.type}` }); 
+      } 
+      totalPrice += pricingEntry.price * nights * quantity; 
+      totalPriceUSD += pricingEntry.converted?.USD * nights * quantity;  
+      for (let i = 0; i < quantity; i++) { 
+        bookingRooms.push({ 
+          roomId: r.roomId, 
+          roomNumber: "Yet to be assigned", 
+          adults, 
+          children, 
+          price: pricingEntry.price * nights, 
+          converted: { USD: pricingEntry.converted?.USD * nights } }); 
+        } 
       }
 
-
-      // Pricing lookup
-      const pricingEntry = roomDoc.pricing.find(p => p.adults === r.adults);
-      if (!pricingEntry) {
-        return res.status(400).json({
-          message: `No pricing defined for ${r.adults} adults in room type ${roomDoc.type}`
-        });
-      }
-
-      totalPrice += pricingEntry.price * nights * quantity;
-
-      for (let i = 0; i < quantity; i++) {
-        bookingRooms.push({
-          roomId: r.roomId,
-          roomNumber: "Yet to be assigned",
-        });
-      }
-    }
-
-    const bookingData = {
-      customerType,
-      rooms: bookingRooms,
-      checkIn: checkInDate,
-      checkOut: checkOutDate,
-      totalPrice,
-      status: "pending",
+    const bookingPayload = { 
+      customerType, user: userId, 
+      rooms: bookingRooms, checkIn: 
+      checkInDate, 
+      checkOut: checkOutDate, 
+      totalPrice, 
+      totalPriceUSD, 
+      status: "pending", 
       numberOfRooms: rooms.reduce((sum, r) => sum + (Number(r.quantity) || 1), 0),
       bookingId: uuidv4().slice(0, 8)
     };
 
-    if (customerType === "Member") bookingData.user = userId;
-    if (customerType === "Guest") {
-      Object.assign(bookingData, {
-        guestFirstName,
-        guestLastName,
-        guestEmail,
-        guestCity,
-        guestZipCode,
-        guestCountry,
-        guestPhone,
-        guestAddress
-      });
-    }
-
-    const booking = await Booking.create(bookingData);
+    const booking = await Booking.create(bookingPayload);
 
     res.status(201).json({ message: "Booking created", booking });
 
@@ -218,19 +181,13 @@ exports.createBookingAdmin = async (req, res) => {
       return res.status(400).json({ message: "Check-out date must be after check-in date" });
     }
 
-    // const today = new Date();
-    // today.setHours(0, 0, 0, 0);
-    // if (checkInDate < today) {
-    //   return res.status(400).json({ message: "Check-in date cannot be in the past" });
-    // }
-
-    // const nights = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
     const MS_PER_DAY = 1000 * 60 * 60 * 24;
     const nights = Math.round(
       (new Date(checkOut) - new Date(checkIn)) / MS_PER_DAY
     );
 
     let totalPrice = 0;
+    let totalPriceUSD = 0;
     const bookingRooms = [];
 
     for (const r of rooms) {
@@ -241,10 +198,6 @@ exports.createBookingAdmin = async (req, res) => {
   const adults = Number(r.adults || 1);
   const children = Number(r.children || 0);
 
-  // Capacity check per room
-  // if (adults + children > roomDoc.maxOccupancy) {
-  //   return res.status(400).json({ message: `Room ${roomDoc.type} cannot accommodate ${adults} adults and ${children} children` });
-  // }
 
   if (r.adults > roomDoc.adults || r.children > roomDoc.children) {
     return res.status(400).json({
@@ -259,18 +212,8 @@ exports.createBookingAdmin = async (req, res) => {
   }
 
   totalPrice += pricingEntry.price * nights * quantity;
+  totalPriceUSD += pricingEntry.converted?.USD * nights * quantity;
 
-  // Check for duplicate room numbers in the booking payload
-// const assignedNumbers = new Set();
-// for (const r of bookingRooms) {
-//   const key = `${r.roomId}_${r.roomNumber}`;
-//   if (assignedNumbers.has(key)) {
-//     return res.status(400).json({
-//       message: `Room number ${r.roomNumber} of type ${r.roomId} is already assigned in this booking`
-//     });
-//   }
-//   assignedNumbers.add(key);
-// }
 
 
   // Expand into multiple bookingRooms entries
@@ -279,7 +222,9 @@ exports.createBookingAdmin = async (req, res) => {
       roomId: r.roomId,
       roomNumber: "Yet to be assigned",
       adults,
-      children
+      children,
+      price: pricingEntry.price * nights, 
+      converted: { USD: pricingEntry.converted?.USD * nights }
     });
   }
 }
@@ -291,6 +236,7 @@ exports.createBookingAdmin = async (req, res) => {
       checkIn: checkInDate,
       checkOut: checkOutDate,
       totalPrice,
+      totalPriceUSD,
       status: "pending",
       numberOfRooms: rooms.length,
       bookingId: uuidv4().slice(0, 8),
@@ -444,6 +390,18 @@ exports.updateBooking = async (req, res) => {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ message: "Booking not found" });
 
+    // ✅ NEW: Prevent check-in date modification if booking is checked_in
+    if (booking.status === "checked_in" && req.body.checkIn) {
+      const existingCheckIn = new Date(booking.checkIn).toISOString().split('T')[0];
+      const newCheckIn = new Date(req.body.checkIn).toISOString().split('T')[0];
+      
+      if (existingCheckIn !== newCheckIn) {
+        return res.status(400).json({ 
+          message: "Cannot modify check-in date for a checked-in booking. Please check out first." 
+        });
+      }
+    }
+
     const allowedFields = ["checkIn", "checkOut", "status", "bookingSource"];
     if (booking.customerType === "Guest") {
       allowedFields.push(
@@ -478,12 +436,12 @@ exports.updateBooking = async (req, res) => {
       }
 
      const checkInDate = updates.checkIn
-  ? buildDateTime(updates.checkIn, hotel.arrivalTime)
-  : booking.checkIn;
+    ? buildDateTime(updates.checkIn, hotel.arrivalTime)
+    : booking.checkIn;
 
-const checkOutDate = updates.checkOut
-  ? buildDateTime(updates.checkOut, hotel.departureTime)
-  : booking.checkOut;
+  const checkOutDate = updates.checkOut
+    ? buildDateTime(updates.checkOut, hotel.departureTime)
+    : booking.checkOut;
 
 
 
@@ -528,8 +486,16 @@ const checkOutDate = updates.checkOut
             return res.status(400).json({ message: `Room ${roomNumber} is already booked for these dates` });
         }
 
+        const pricingEntry = roomDoc.pricing.find(p => p.adults === adults); if (!pricingEntry) { return res.status(400).json({ message: `No pricing for ${adults} adults in room ${roomDoc.type}` }); }
 
-        updatedRooms.push({ roomId: r.roomId, roomNumber, adults, children });
+        updatedRooms.push({ 
+          roomId: r.roomId, 
+          roomNumber, 
+          adults, 
+          children,
+          price: pricingEntry.price * nights, 
+          converted: { USD: pricingEntry.converted?.USD * nights } 
+        });
       }
 
       booking.rooms = updatedRooms;
@@ -537,13 +503,16 @@ const checkOutDate = updates.checkOut
 
       // ✅ Calculate totalPrice
       let totalPrice = 0;
+      let totalPriceUSD = 0;
       for (const r of updatedRooms) {
         const roomDoc = await Room.findById(r.roomId);
         const pricingEntry = roomDoc.pricing.find(p => p.adults === r.adults);
         if (!pricingEntry) return res.status(400).json({ message: `No pricing for ${r.adults} adults in room ${roomDoc.type}` });
         totalPrice += pricingEntry.price * nights;
+        totalPriceUSD += pricingEntry.converted?.USD * nights;
       }
       booking.totalPrice = totalPrice;
+      booking.totalPriceUSD = totalPriceUSD;
     }
 
     // Apply checkIn/checkOut separately
@@ -585,7 +554,8 @@ exports.deleteBooking = async (req, res) => {
         { arrayFilters: [{ "elem.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }] } 
       ); 
     }
-
+    await POS.deleteMany({ booking: booking._id });
+    await Cart.deleteMany({ booking: booking._id });
     await booking.deleteOne();
     res.json({ message: "Booking deleted successfully" });
   } catch (error) {
@@ -597,7 +567,7 @@ exports.getBookingById = async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
       .populate('user', 'name email phone')
-      .populate('rooms.roomId', 'type price');
+      .populate('rooms.roomId', 'type');
     if (!booking) {
       return res.status(404).json({ message: 'Booking not found' });
     }
@@ -620,8 +590,8 @@ exports.getReport = async (req, res) => {
     const toDate = new Date(to);
 
     const bookings = await Booking.find({
-      checkIn: { $gte: fromDate },
-      checkOut: { $lte: toDate }
+      checkIn: { $lte: toDate },
+      checkOut: { $gte: fromDate },
     })
       .populate("user", "name email")
       .populate("rooms.roomId", "type price");
@@ -632,10 +602,18 @@ exports.getReport = async (req, res) => {
       confirmed: bookings.filter(b => b.status === "confirmed").length,
       pending: bookings.filter(b => b.status === "pending").length,
       cancelled: bookings.filter(b => b.status === "cancelled").length,
-      totalGuests: bookings.reduce((sum, b) => sum + b.adults + b.children, 0),
+      totalGuests: bookings.reduce((sum, b) => { 
+        const roomGuests = b.rooms.reduce( (roomSum, r) => 
+          roomSum + (r.adults || 0) + (r.children || 0)
+        , 0 ); 
+        return sum + roomGuests; 
+      }, 0),
       revenue: bookings
-        .filter(b => b.status === "confirmed")
+        .filter(b => b.status === "checked_out" || b.status === "confirmed")
         .reduce((sum, b) => sum + b.totalPrice, 0),
+      revenueUSD: bookings
+        .filter(b => b.status === "checked_out" || b.status === "confirmed")
+        .reduce((sum, b) => sum + b.totalPriceUSD, 0),
     };
 
     res.json({ summary, bookings });
@@ -726,14 +704,25 @@ exports.getAvailableRoomNumbersByDate = async (req, res) => {
 
     // Find bookings that overlap with the requested dates
     const bookings = await Booking.find({
-  "rooms.roomId": roomId,
-  "rooms.roomNumber": { $in: allRoomNumbers },
-  status: { $in: ["pending", "confirmed", "checked_in"] },
-  checkIn: { $lt: checkOutDate },
-  checkOut: { $gt: checkInDate }
-})
-.select("rooms guestFirstName customerType user bookingId") // include bookingId
-.populate("user", "name");
+      "rooms.roomId": roomId,
+      "rooms.roomNumber": { $in: allRoomNumbers },
+      status: { $in: ["pending", "confirmed", "checked_in"] },
+      checkIn: { $lt: checkOutDate }
+    })
+
+    .select("rooms guestFirstName customerType user bookingId") // include bookingId
+    .populate("user", "name");
+
+     // Find bookings that overlap with the requested dates
+//     const bookings = await Booking.find({
+//   "rooms.roomId": roomId,
+//   "rooms.roomNumber": { $in: allRoomNumbers },
+//   status: { $in: ["pending", "confirmed", "checked_in"] },
+//   checkIn: { $lt: checkOutDate },
+//   checkOut: { $gt: checkInDate }
+// })
+// .select("rooms guestFirstName customerType user bookingId") // include bookingId
+// .populate("user", "name");
 
 let occupiedRoomNumbers = [];
 for (const booking of bookings) {
@@ -844,13 +833,27 @@ exports.searchBookings = async (req, res) => {
       query = {};
     }
 
+    const now = new Date();
+    const bookingsAgg = await Booking.aggregate([ 
+      { $match: query }, 
+      { 
+        $addFields: { 
+          diffFromNow: { 
+            $abs: { $subtract: ["$checkIn", now] } 
+          } 
+        } 
+      }, 
+      { $sort: { diffFromNow: 1 } }, 
+      { $skip: skip }, 
+      { $limit: Number(limit) } 
+    ]);
+
+    const bookings = await Booking.populate(bookingsAgg, [ 
+      { path: "user", select: "name phone" }, 
+      { path: "rooms.roomId", select: "type price" } 
+    ]);
+
     const total = await Booking.countDocuments(query);
-    const bookings = await Booking.find(query)
-      .populate("user", "name phone")
-      .populate("rooms.roomId", "type price")
-      .sort({ createdAt: -1 })
-      .skip(Number(skip))
-      .limit(Number(limit));
 
     res.status(200).json({
       bookings,
@@ -1081,6 +1084,7 @@ exports.createDirectCheckIn = async (req, res) => {
     const nights = Math.round((checkOutDate - checkInDate) / MS_PER_DAY);
 
     let totalPrice = 0;
+    let totalPriceUSD = 0;
     const bookingRooms = [];
 
     // ✅ Process each room
@@ -1115,12 +1119,15 @@ exports.createDirectCheckIn = async (req, res) => {
       const pricingEntry = roomDoc.pricing.find(p => p.adults === adults);
       if (!pricingEntry) return res.status(400).json({ message: `No pricing for ${adults} adults in room ${roomDoc.type}` });
       totalPrice += pricingEntry.price * nights;
+      totalPriceUSD += pricingEntry.converted?.USD * nights;
 
       bookingRooms.push({
         roomId: r.roomId,
         roomNumber,
         adults,
-        children
+        children,
+        price: pricingEntry.price * nights, 
+        converted: { USD: pricingEntry.converted?.USD * nights }
       });
     }
 
@@ -1131,6 +1138,7 @@ exports.createDirectCheckIn = async (req, res) => {
       checkIn: checkInDate,
       checkOut: checkOutDate,
       totalPrice,
+      totalPriceUSD,
       status: "checked_in",
       numberOfRooms: bookingRooms.length,
       bookingId: uuidv4().slice(0, 8),

@@ -125,7 +125,7 @@ const MyBookingsPage = () => {
 
         <hr className="h-px bg-gray-200 border-0"></hr>
 
-        <p className="text-gray-700 text-sm py-4"><strong>Total Price:</strong> {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {booking.totalPrice}</p>
+        <p className="text-gray-700 text-sm py-4"><strong>Total Price:</strong> ${booking.totalPrice}</p>
         
         <hr className="h-px bg-gray-200 border-0"></hr>
         

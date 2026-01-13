@@ -51,8 +51,8 @@ const HotelForm = ({ mode }) => {
             address: hotel.address || "",
             phone: hotel.phone || "",
             email: hotel.email || "",
-            logo: null,
             currency: hotel.currency || "USD",
+            logo: null,
             amenities: amenitiesArray.length ? amenitiesArray : [""],
             arrivalTime: hotel.arrivalTime || "",
             departureTime: hotel.departureTime || "",
@@ -126,6 +126,7 @@ const HotelForm = ({ mode }) => {
     }
   };
 
+  console.log(hotelData)
   return (
     <div className="min-h-screen bg-gray-100 p-4">
     <div className="max-w-2xl mx-auto p-6 bg-white rounded-2xl shadow-lg">

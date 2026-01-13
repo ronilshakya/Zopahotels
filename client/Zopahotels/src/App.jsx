@@ -44,6 +44,8 @@ import AllCheckouts from './pages/admin/AllCheckouts';
 import AllReservations from './pages/admin/AllReservations';
 import AddDirectCheckIn from './pages/admin/AddDirectCheckIn';
 import Checkout from './pages/admin/Checkout';
+import POSCatalog from './pages/admin/POSCatalog';
+import POSTerminal from './pages/admin/POSTerminal';
 
 // Wrapper to get `mode` from URL and pass as prop
 const HotelFormWrapper = () => {
@@ -107,6 +109,9 @@ export default function App() {
           <Route path="check-out" element={<AllCheckouts />} />
           <Route path="direct-check-in" element={<AddDirectCheckIn />} />
           <Route path="check-out-page/:id" element={<Checkout />} />
+          <Route path="pos-catalog" element={<POSCatalog />} />
+          <Route path="pos-terminal/:bookingId" element={<POSTerminal key={window.location.pathname}/>} />
+          <Route path="pos-terminal" element={<POSTerminal />} />
 
           {/* Hotel form routes */}
           <Route path="hotel-form/:mode" element={<HotelFormWrapper />} />

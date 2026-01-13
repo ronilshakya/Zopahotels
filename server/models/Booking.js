@@ -63,6 +63,8 @@ const BookingSchema = new mongoose.Schema({
                 required: true,
                 default: 0
             },
+            price: Number, 
+            converted: { USD: Number }
         }
     ],
 
@@ -78,6 +80,11 @@ const BookingSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    // Converted USD total 
+    totalPriceUSD: { 
+        type: Number, 
+        required: true 
+    }, 
     status: {
         type: String,
         enum: ["pending", "confirmed", "cancelled", "checked_in", "checked_out","no_show"],
@@ -94,7 +101,75 @@ const BookingSchema = new mongoose.Schema({
     },
     bookingSource:[{
         type: String
-    }]
+    }],
+    charges:[
+        {
+            type:{
+                type: String,
+                enum:["room_service","discount","advance"],
+                required: true
+            },
+            amount: Number,
+            currency: {
+                type: String,
+                default: "NPR"
+            },
+            converted:{
+                USD:{
+                    type:Number
+                }
+            },
+            roomNumber : {type: String},
+            createdAt: { type: Date, default: Date.now },
+            items: [ 
+                { 
+                    item: { type: mongoose.Schema.Types.ObjectId, ref: "FoodItem" }, 
+                    name: String, 
+                    quantity: Number, 
+                    price: Number,
+                     converted:{
+                        USD:{
+                            type:Number
+                        }
+                    },
+                } 
+            ]
+        }
+    ],
+    payments:[
+        {
+            type:{
+                type: String,
+                enum: ["cash","card","online"],
+                required: true
+            },
+            amount: Number,
+            currency: {
+                type: String,
+                default: "NPR"
+            },
+            converted:{
+                USD:{
+                    type:Number
+                }
+            },
+            roomNumber : {type: String},
+            createdAt: { type: Date, default: Date.now },
+            items: [ 
+                { 
+                    item: { type: mongoose.Schema.Types.ObjectId, ref: "FoodItem" }, 
+                    name: String, 
+                    quantity: Number, 
+                    price: Number,
+                    converted:{
+                        USD:{
+                            type:Number
+                        }
+                    }, 
+                } 
+            ]
+        }
+    ]
 },{timestamps:true});
 
 module.exports = mongoose.model("Booking", BookingSchema);

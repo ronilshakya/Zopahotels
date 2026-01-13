@@ -35,5 +35,7 @@ app.use('/api/users',require('./routes/userRoute'));
 app.use('/api/rooms',require('./routes/roomRoute'));
 app.use('/api/booking',require('./routes/bookingRoute'));
 app.use('/api/hotel',require('./routes/hotelRoute'));
+app.use('/api/pos',require('./routes/posRoute'));
+app.use('/api/cart',require('./routes/cartRoute'));
 
 app.listen(process.env.PORT,()=>{console.log(`Server started at port: ${process.env.PORT}`)})

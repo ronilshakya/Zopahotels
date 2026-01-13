@@ -2,6 +2,20 @@ const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
+
+let conversionRate = 132;
+
+async function updateConversionRate(){
+  try {
+    const res = await axios.get('https://v6.exchangerate-api.com/v6/bde75f96b5e4ec85a13ca280/latest/USD');
+    conversionRate = res.data.conversion_rates.NPR;
+  } catch (error) {
+    console.error("Error fetching conversion rate:", err.message);
+  }
+}
+
+updateConversionRate();
 
 exports.createRoom = async (req, res) => {
   try {
@@ -32,11 +46,20 @@ exports.createRoom = async (req, res) => {
     if (!Array.isArray(pricing) || pricing.length === 0) {
       return res.status(400).json({ message: "Pricing must be a non-empty array" });
     }
-    for (const p of pricing) {
-      if (typeof p.adults !== "number" || typeof p.price !== "number") {
-        return res.status(400).json({ message: "Each pricing entry must have numeric adults and price" });
-      }
-    }
+
+    
+
+    pricing = pricing.map(p => { 
+      if (typeof p.adults !== "number" || typeof p.price !== "number") { 
+        throw new Error("Each pricing entry must have numeric adults and price"); 
+      } 
+      return { 
+        ...p, 
+        converted: { 
+          USD: +(p.price / conversionRate).toFixed(2) 
+        } 
+      }; 
+    });
 
     const newRoom = new Room({
       type,
@@ -148,6 +171,15 @@ exports.updateRoom = async (req, res) => {
           return res.status(400).json({ message: "Each pricing entry must have numeric adults and price" });
         }
       }
+
+       
+      req.body.pricing = req.body.pricing.map(p => ({ 
+        ...p, 
+        currency: "NPR", 
+        converted: { 
+          USD: +(p.price / conversionRate).toFixed(2) 
+        } 
+      }));
     }
 
     // Allowed fields to update (removed price/adults, added pricing)

@@ -69,6 +69,8 @@ const Checkout = () => {
     return <p className="text-center text-red-500">Booking not found.</p>;
   }
 
+  console.log(booking)
+
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -109,28 +111,76 @@ const Checkout = () => {
           </div>
           {/* col2 */}
           <div className='flex flex-col justify-between'>
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-gray-200 text-gray-700">
-                  <th className="px-4 py-3 text-left font-semibold text-sm">Room Type</th>
-                  <th className="px-4 py-3 text-left font-semibold text-sm">Room Number</th>
-                  <th className="px-4 py-3 text-left font-semibold text-sm">Adults</th>
-                  <th className="px-4 py-3 text-left font-semibold text-sm">Children</th>
-                </tr>
-              </thead>
-              <tbody>
-                {booking.rooms.map((r, i) => (                      
-                    <tr key={i} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
-                      <td className="px-4 py-3 text-gray-600 text-sm">{r.roomId?.type}</td> 
-                      <td className="px-4 py-3 text-gray-600 text-sm">{r.roomNumber} </td>
-                      <td className="px-4 py-3 text-gray-600 text-sm">{r.adults} </td>
-                      <td className="px-4 py-3 text-gray-600 text-sm">{r.children}</td>
-                    </tr>
-                ))}
-              </tbody>
-            </table>
+            <div>
+              <h1 className='font-semibold text-sm mb-2 text-gray-600'>Room Details</h1>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-700">
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Room Type</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Room Number</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Adults</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Children</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {booking.rooms.map((r, i) => (                      
+                      <tr key={i} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
+                        <td className="px-4 py-3 text-gray-600 text-sm">{r.roomId?.type}</td> 
+                        <td className="px-4 py-3 text-gray-600 text-sm">{r.roomNumber} </td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{r.adults} </td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{r.children}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">
+                          {hotel.currency === "NPR"
+                            ? "Rs " + r.price
+                            : "$" + r.converted?.USD.toFixed(2)}
+                        </td>
+                      </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {booking.charges.length > 0 &&(
+
+            <div>
+              <h1 className='font-semibold text-sm mb-2 text-gray-600'>Charges</h1>
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="bg-gray-200 text-gray-700">
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Item</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Room Number</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Quantity</th>
+                    <th className="px-4 py-3 text-left font-semibold text-sm">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {booking.charges.map((charge) => (
+                    charge.items.map((i) => (
+                      <tr key={i._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
+                        <td className="px-4 py-3 text-gray-600 text-sm">{i.name}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{charge.roomNumber}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">{i.quantity}</td>
+                        <td className="px-4 py-3 text-gray-600 text-sm">
+                          {hotel.currency === "NPR"
+                            ? "Rs " + i.price
+                            : "$" + i.converted?.USD.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))
+                  ))}
+
+                </tbody>
+              </table>
+            </div>
+            )}
             <div className='flex flex-col justify-end'>
-              <p className='my-4 text-right px-4'>Total Price: <b>{hotel?.currency === "USD" ? "$" : "Rs"} {booking.totalPrice}</b></p>
+              <p className='my-4 text-right px-4'>Total Price: 
+                <b>{hotel.currency === "NPR" ? (
+                      " Rs " + booking.totalPrice
+                    ):(
+                      " $" +booking.totalPriceUSD.toFixed(2)
+                    )}</b>
+              </p>
               <Button 
                 disabled={booking.status === "checked_out"} 
                 onClick={() =>handleCheckOut(id)} 

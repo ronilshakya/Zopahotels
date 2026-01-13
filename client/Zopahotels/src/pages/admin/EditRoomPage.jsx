@@ -178,37 +178,40 @@ const removePricingRow = (index) => {
           </div>
 
           <div className="mt-6">
-  <label className="block text-sm font-medium text-gray-700 mb-2">
-    Pricing (per number of adults)
-  </label>
-  {form.pricings.map((pricing, index) => (
-    <div key={index} className="flex gap-2 mb-2">
-      <input
-  type="number"
-  value={pricing.adults}
-  min="1"
-  onChange={(e) => {
-    const val = e.target.value;
-    handlePricingChange(index, "adults", val === "" ? 1 : Math.max(1, parseInt(val)));
-  }}
-  className="w-1/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
-  placeholder="Adults"
-  required
-/>
-
-<input
-  type="text"
-  value={pricing.price}
-  onChange={(e) => {
-    const val = e.target.value;
-    // convert safely to number
-    const num = val === "" ? 0 : Number(val);
-    handlePricingChange(index, "price", num);
-  }}
-  className="w-2/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
-  placeholder="Price"
-  required
-/>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Pricing (per number of adults in NPR)
+            </label>
+            {form.pricings.map((pricing, index) => (
+              <div key={index} className="flex gap-2 mb-2">
+                
+                  <input
+                    type="number"
+                    value={pricing.adults}
+                    min="1"
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      handlePricingChange(index, "adults", val === "" ? 1 : Math.max(1, parseInt(val)));
+                    }}
+                    className="w-1/3 px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+                    placeholder="Adults"
+                    required
+                  />
+                  <div className="w-2/3 flex items-center">
+                    <span className="px-3 text-gray-600">Rs.</span>
+                    <input
+                      type="text"
+                      value={pricing.price}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        // convert safely to number
+                        const num = val === "" ? 0 : Number(val);
+                        handlePricingChange(index, "price", num);
+                      }}
+                      className="w-full px-3 py-2 border rounded-md focus:ring-blue-500 focus:outline-none"
+                      placeholder="Price in Rupees"
+                      required
+                    />
+                  </div>
 
 
       <button

@@ -43,7 +43,6 @@ const Rooms = () => {
       </div>
     );
   }
-  console.log(rooms)
 
   return (
     <div className="bg-gray-100">
@@ -80,7 +79,7 @@ const Rooms = () => {
               <h2 className="text-xl font-semibold text-gray-800">{room.type}</h2>
               <p className="text-gray-700 font-medium mb-4">
                 {room.pricing.map((p)=> (
-                  <p>{p.adults} Adults - {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")}{p.price}/ night</p>
+                  <p>{p.adults} Adults - ${p.converted.USD}/ night</p>
                   
                 ))}
                 </p>

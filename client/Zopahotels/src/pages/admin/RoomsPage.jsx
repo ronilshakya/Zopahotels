@@ -114,8 +114,6 @@ const handleDeleteRoom = async (id) => {
 
               <div className="p-4">
                 <h3 className="text-xl font-semibold text-gray-800 mb-2">{room.type}</h3>
-                {/* <p className="text-gray-600 mb-2">{room.description}</p> */}
-                {/* <p className="text-gray-800 font-bold mb-2">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {room.price} / night</p> */}
                 <div className="flex flex-wrap gap-2 mb-4">
                   {room.rooms.map((r) => (
                     <span

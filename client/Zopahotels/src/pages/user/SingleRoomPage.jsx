@@ -80,7 +80,7 @@ const SingleRoomPage = () => {
               <p className="text-gray-700 text-sm">Price per Night</p>
               <p className="">
                 {room.pricing.map((p)=> (
-                  <p>{p.adults} Adults - {hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")}{p.price}/ night</p>
+                  <p>{p.adults} Adults - ${p.converted.USD}/ night</p>
                 ))}
               </p>
             </div>

@@ -3,6 +3,7 @@ import { getReport } from "../../api/bookingApi";
 import Button from "../../components/Button";
 import Swal from "sweetalert2";
 import { useHotel } from "../../context/HotelContext";
+import dayjs from 'dayjs'
 
 const ReportsPage = () => {
   const [fromDate, setFromDate] = useState("");
@@ -60,7 +61,6 @@ const ReportsPage = () => {
     newWindow.print();
   };
 
-  console.log(bookings)
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
@@ -120,7 +120,15 @@ const ReportsPage = () => {
             </div>
             <div className="bg-yellow-100 p-4 rounded-lg text-center col-span-2 md:col-span-1">
               <p className="text-gray-600 text-sm">Revenue</p>
-              <p className="text-xl font-bold">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {summary.revenue}</p>
+              <p className="text-xl font-bold">
+                {
+                  hotel.currency === "NPR" ? (
+                    "Rs. " + summary.revenue
+                  ):(
+                    "$" + summary.revenueUSD
+                  )                  
+                }
+              </p>
             </div>
           </div>
         )}
@@ -143,9 +151,7 @@ const ReportsPage = () => {
               </thead>
               <tbody>
                 {bookings.map((b) => {
-                  const nights =
-                    (new Date(b.checkOut) - new Date(b.checkIn)) /
-                    (1000 * 60 * 60 * 24);
+                  const nights = dayjs(b.checkOut).startOf("day").diff(dayjs(b.checkIn).startOf("day"), "day");
                   return (
                     <tr key={b._id} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-2 text-sm">{b.guestFirstName + " " + b.guestLastName || "Deleted User"}</td>
@@ -170,7 +176,15 @@ const ReportsPage = () => {
                       ))}
                       </ul>
                       </td>
-                      <td className="px-4 py-2 text-sm">{hotel ? hotel.currency === "USD" ? ("$"):("Rs") : ("$")} {b.totalPrice}</td>
+                      <td className="px-4 py-2 text-sm">
+                        {
+                          hotel.currency === "NPR" ? (
+                            "Rs. " + b.totalPrice
+                          ):(
+                            "$" + b.totalPriceUSD.toFixed(2)
+                          )                  
+                        }
+                      </td>
                       <td className="px-4 py-2 text-sm capitalize">{b.status}</td>
                     </tr>
                   );

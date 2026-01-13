@@ -9,6 +9,7 @@ import { useHotel } from "../../context/HotelContext";
 import Swal from "sweetalert2";
 import { FaSuitcase } from "react-icons/fa6";
 import { TbCancel } from "react-icons/tb";
+import { MdOutlineRoomService } from "react-icons/md";
 
 const AllCheckins = () => {
   const [bookings, setBookings] = useState([]);
@@ -211,14 +212,18 @@ const AllCheckins = () => {
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(b.checkOut).toLocaleDateString()}</td>
 
                     <td className="px-4 py-3 text-gray-600 text-sm">
-                      {hotel?.currency === "USD" ? "$" : "Rs"} {b.totalPrice}
+                      {hotel.currency === "NPR" ? (
+                        "Rs " + b.totalPrice
+                      ):(
+                        "$" +b.totalPriceUSD.toFixed(2)
+                      )}
                     </td>
 
                     <td className="px-4 py-3">
                       <div className="p-3 flex gap-2">
                         <button
                           onClick={() => navigate(`/admin/edit-booking/${b._id}`)}
-                          className="bg-blue-600 text-white px-2 py-2 rounded-md"
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded-md cursor-pointer"
                           title="Edit Booking"
                         >
                           <FiEdit />
@@ -226,15 +231,23 @@ const AllCheckins = () => {
 
                         <button
                           onClick={() => navigate(`/admin/check-out-page/${b._id}`)}
-                          className="bg-orange-600 hover:bg-orange-700 text-white px-2 py-2 rounded-md"
+                          className="bg-orange-600 hover:bg-orange-700 text-white px-2 py-2 rounded-md cursor-pointer"
                           title="Check-out"
                         >
                           <FaSuitcase />
                         </button>
+                        
+                        <button
+                          onClick={() => navigate(`/admin/add-food-service/${b._id}`)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-2 py-2 rounded-md cursor-pointer"
+                          title="Add Food Service"
+                        >
+                          <MdOutlineRoomService size={20}/>
+                        </button>
 
                         <button 
                           onClick={() => handleBookingStatusChange(b._id, "cancelled")} 
-                          className="px-2 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
+                          className="px-2 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 cursor-pointer"
                           title='Cancel Booking'
                         >
                             <TbCancel />
@@ -243,7 +256,7 @@ const AllCheckins = () => {
                         {user.role === 'admin' && (
                           <button 
                             onClick={() => handleDeleteBooking(b._id)} 
-                            className="px-2 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+                            className="px-2 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 cursor-pointer"
                             title='Delete Booking'>
                               <MdDelete />
                           </button>

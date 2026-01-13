@@ -1,4 +1,6 @@
 const Hotel = require('../models/Hotel');
+const path = require('path');
+const fs = require('fs');
 
 exports.createHotel = async (req, res) => {
     try {
@@ -104,6 +106,17 @@ exports.updateHotel = async (req, res) => {
     });
 
     if (req.file) {
+      if (hotel.logo) { 
+        const oldLogoPath = path.join(__dirname, "..", "uploads", hotel.logo); 
+        fs.unlink(oldLogoPath, (err) => { 
+          if (err) { 
+            console.error("Failed to delete old logo:", err.message); 
+          } 
+          else { 
+            console.log("Old logo deleted:", hotel.logo); 
+          } 
+        }); 
+      }
       hotel.logo = req.file.filename; // multer saves filename
     }
 

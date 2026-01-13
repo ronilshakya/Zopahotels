@@ -148,7 +148,11 @@ const AllCheckouts = () => {
                     <td className="px-4 py-3 text-gray-600 text-sm">{new Date(b.checkOut).toLocaleDateString()}</td>
 
                     <td className="px-4 py-3 text-gray-600 text-sm">
-                      {hotel?.currency === "USD" ? "$" : "Rs"} {b.totalPrice}
+                      {hotel.currency === "NPR" ? (
+                        "Rs " + b.totalPrice
+                      ):(
+                        "$" +b.totalPriceUSD?.toFixed(2)
+                      )}
                     </td>
 
                     <td className="px-4 py-3">

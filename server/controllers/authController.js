@@ -193,6 +193,7 @@ exports.updateUser = async (req,res) =>{
                 user[key] = req.body[key];
             }
         });
+        if (req.body.password && req.body.password.trim() !== "") { const salt = await bcrypt.genSalt(10); user.password = await bcrypt.hash(req.body.password, salt); }
         await user.save();
         res.json({message: "User Updated"});
     } catch (error) {

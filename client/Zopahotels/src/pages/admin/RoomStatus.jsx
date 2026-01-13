@@ -106,6 +106,7 @@ const RoomStatus = () => {
                           html: `
                             <div class="flex flex-col gap-2 text-left">
                               ${occupied ? `<button id="bookingDetails" class="swal2-confirm swal2-styled">Booking Details</button>` : ''}
+                              ${occupied ? `<button id="roomService" class="swal2-confirm swal2-styled">Room Service</button>` : ''}
                               ${r.status === 'dirty' ? '<button id="startCleaning" class="swal2-confirm swal2-styled">Start Cleaning</button>' : ''}
                               ${r.status === 'cleaning_in_progress' ? '<button id="finishCleaning" class="swal2-confirm swal2-styled">Finish Cleaning</button>' : ''}
                               ${r.status === 'not_available' ? '<button id="checkOut" class="swal2-confirm swal2-styled">Check-out</button>' : ''}
@@ -155,6 +156,13 @@ const RoomStatus = () => {
                               if (bookingBtn) {
                                 bookingBtn.addEventListener("click", () => {
                                   navigate(`/admin/booking-details/${occupied.bookingId}`);
+                                  Swal.close();
+                                });
+                              }
+                              const roomServiceBtn = popup.querySelector("#roomService");
+                              if (roomServiceBtn) {
+                                roomServiceBtn.addEventListener("click", () => {
+                                  navigate(`/admin/pos-terminal/${occupied.bookingId}`);
                                   Swal.close();
                                 });
                               }

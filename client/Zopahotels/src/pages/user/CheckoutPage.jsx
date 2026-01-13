@@ -21,9 +21,9 @@ const CheckoutPage = () => {
 
   // Total price for all rooms
   const totalPrice = selectedRooms.reduce(
-  (sum, room) => sum + room.pricePerNight * nights,
-  0
-);
+    (sum, room) => sum + room.pricePerNight * nights,
+    0
+  ).toFixed(2);
 
 
   const handleConfirmBooking = async () => {
@@ -38,20 +38,16 @@ const CheckoutPage = () => {
 
     // Build payload with per-room occupancy
     const payload = {
-  rooms: selectedRooms.map(room => ({
-  roomId: room.roomId,
-  adults: room.adults,
-  children: room.children,
-  pricePerNight: room.pricePerNight,
-  totalPrice: room.pricePerNight * nights,
-  type: room.type
-})),
+    customerType: "Member",
+    checkIn: new Date(checkIn).toISOString(),
+checkOut: new Date(checkOut).toISOString(),
+    rooms: selectedRooms.map(room => ({
+      roomId: room.roomId,
+      adults: room.adults,
+      children: room.children
+    }))
+  };
 
-  customerType: "Member",
-  checkIn,
-  checkOut,
-  numberOfRooms: selectedRooms.length
-};
 
 
     try {
@@ -63,10 +59,11 @@ const CheckoutPage = () => {
       }).then(() => navigate("/my-bookings"));
     } catch (error) {
       console.error(error);
-      Swal.fire({
-        title: `Booking failed. ${error.message || "Please try again."}`,
-        icon: "error"
-      });
+     Swal.fire({
+  title: `Booking failed. ${error.response?.data?.message || error.message || "Please try again."}`,
+  icon: "error"
+});
+
     } finally {
       setLoading(false);
     }
