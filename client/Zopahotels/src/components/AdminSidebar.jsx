@@ -22,6 +22,7 @@ import { FaPaperPlane } from "react-icons/fa";
 import { FaBed } from "react-icons/fa";
 import { GrCatalog } from "react-icons/gr";
 import { FaCashRegister } from "react-icons/fa";
+import { FaFileInvoice } from "react-icons/fa";
 
 const AdminSidebar = () => {
   const {hotel} = useHotel();
@@ -43,10 +44,18 @@ const AdminSidebar = () => {
       ] 
     },
     { to: "/admin/pos-terminal", label: "POS Terminal", icon: <FaCashRegister size={20}/> },
+    { to: "/admin/invoice-list", label: "Invoice List", icon: <FaFileInvoice  size={20}/> },
     { to: "/admin/all-users", label: "Customers", icon: <FaUsers size={20}/> },
     ...(user?.role === "admin" ? [{ to: "/admin/all-admins", label: "Users", icon: <RiAdminFill size={20}/> }] : []),
     { to: "/admin/booking-calender", label: "Calender", icon: <MdDateRange size={20}/> },
-    { to: "/admin/reports", label: "Reports", icon: <HiOutlineDocumentReport size={20}/> },
+    { 
+      label: "Reports",
+      icon: <HiOutlineDocumentReport size={20}/>,
+      submenu: [
+        { to: "/admin/booking-reports", label: "Booking Report" ,icon: <HiOutlineDocumentReport size={20}/>},
+        { to: "/admin/invoice-reports", label: "Invoice Report" ,icon: <HiOutlineDocumentReport size={20}/>},
+      ] 
+    },
     ...(user?.role === "admin"
     ? [
         {

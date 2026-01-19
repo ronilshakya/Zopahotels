@@ -8,13 +8,12 @@ import { FiEdit } from "react-icons/fi";
 import { IoArrowBackSharp } from "react-icons/io5";
 import { RiPrinterLine } from "react-icons/ri";
 import Swal from 'sweetalert2';
-import { getInvoiceByBookingId, applyDiscount, applyVAT, resetInvoice } from '../../api/invoiceApi';
+import { getInvoiceByBookingId, applyDiscount, applyVAT, resetInvoice, getInvoiceById, finalizeInvoice } from '../../api/invoiceApi';
 
-const Checkout = () => {
+const CheckoutPOS = () => {
   const { id } = useParams();
-  const [booking, setBooking] = useState(null);
   const [invoice,setInvoice] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const { hotel } = useHotel();
   const token = localStorage.getItem("adminToken");
   const [discountType, setDiscountType] = useState("percentage");
@@ -24,7 +23,7 @@ const Checkout = () => {
 
   const fetchInvoice = async () => {
     try {
-      const res = await getInvoiceByBookingId( token, id );
+      const res = await getInvoiceById( token, id );
       setInvoice(res.invoice);
     } catch (error) {
       console.error("Failed to fetch invoice:", error);
@@ -36,46 +35,32 @@ const Checkout = () => {
 
   console.log("Invoice:", invoice);
 
-  useEffect(() => {
-    const fetchBooking = async () => {
-      try {
-        const res = await getBookingById( id, token );
-        setBooking(res);
-      } catch (error) {
-        console.error("Failed to fetch booking:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchBooking();
-  }, [id, token]);
-
-  const handleCheckOut = (bookingId) => {
-      Swal.fire({
-        title: 'Are you sure you want to check-out this guest?',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: 'green',
-        cancelButtonColor: '#d33',
-        confirmButtonText: 'Yes, check-out!'
-      }).then(async (result) => {
-        if (result.isConfirmed) {
-          try{
-            const res =  await updateBookingStatus({
-              token, 
-              payload:{ bookingId: bookingId, newStatus: 'checked_out' }, 
-            });
-          }catch(error){
-            Swal.fire('Error', 'Failed to check-out guest.', 'error');
-          }
-          Swal.fire(
-            'Checked Out!',
-            'The guest has been checked out successfully.',
-            'success'
-          );
-        }
-      });
-    }
+  // const handleCheckOut = (bookingId) => {
+  //     Swal.fire({
+  //       title: 'Are you sure you want to check-out this guest?',
+  //       icon: 'warning',
+  //       showCancelButton: true,
+  //       confirmButtonColor: 'green',
+  //       cancelButtonColor: '#d33',
+  //       confirmButtonText: 'Yes, check-out!'
+  //     }).then(async (result) => {
+  //       if (result.isConfirmed) {
+  //         try{
+  //           const res =  await updateBookingStatus({
+  //             token, 
+  //             payload:{ bookingId: bookingId, newStatus: 'checked_out' }, 
+  //           });
+  //         }catch(error){
+  //           Swal.fire('Error', 'Failed to check-out guest.', 'error');
+  //         }
+  //         Swal.fire(
+  //           'Checked Out!',
+  //           'The guest has been checked out successfully.',
+  //           'success'
+  //         );
+  //       }
+  //     });
+  //   }
 
     const handleApplyDiscount = async (e) => {
       e.preventDefault();
@@ -153,6 +138,31 @@ const Checkout = () => {
       });
     }
 
+    const handleCheckOut = () => {
+      Swal.fire({
+        title: 'Are you sure you want to finalize invoice?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: 'green',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, finalize invoice!'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try{
+            const res =  await finalizeInvoice(token, invoice._id);
+            fetchInvoice();
+          }catch(error){
+            Swal.fire('Error', 'Failed to finalize invoice.', 'error');
+          }
+          Swal.fire(
+            'Invoice Finalized!',
+            'The invoice has been finalized successfully.',
+            'success'
+          );
+        }
+      });
+    }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
@@ -161,8 +171,8 @@ const Checkout = () => {
     );
   }
 
-  if (!booking) {
-    return <p className="text-center text-red-500">Booking not found.</p>;
+  if (!invoice) {
+    return <p className="text-center text-red-500">Invoice not found.</p>;
   }
 
 
@@ -171,30 +181,15 @@ const Checkout = () => {
     <div className='bg-white p-6 border-b border-gray-300 flex justify-between items-center'>
       <div>
         <h1 className='px-2 py-1 text-2xl font-bold'>Guest Checkout</h1>
-        {invoice && (
-          <div className='flex gap-2 px-2 py-1'>
-            <span className='font-bold'>{invoice.booking.guestFirstName} {invoice.booking.guestLastName}</span>
-            <span className='text-gray-500'>|</span>
-            <h1>{new Date(invoice.booking.checkIn).toLocaleDateString(
-              "en-US",{ month: 'short', day: 'numeric' }
-            )}</h1>
-            -
-            <h1>{new Date(invoice.booking.checkOut).toLocaleDateString(
-              "en-US",{ month: 'short', day: 'numeric' }
-            )}</h1>
-          </div>
-        )}
       </div>
       <div className='flex gap-2'>
         <Button 
-              disabled={booking.status === "checked_out"} 
               onClick={() =>handleReset()} 
               className="bg-red-600 text-white">
                 Reset
             </Button>
         <Button 
-            disabled={booking.status === "checked_out"} 
-            onClick={() =>handleCheckOut(id)} 
+            onClick={() =>handleCheckOut()} 
             className="bg-green-600 text-white">
               Confirm Checkout
           </Button>
@@ -220,21 +215,6 @@ const Checkout = () => {
                   </tr>
                 </thead>
                 <tbody className='bg-white'>
-                    {invoice?.booking?.rooms?.map((room, index) => (
-                      <tr key={index} className="border-t border-gray-300">
-                        <td className="px-4 py-3">
-                          {new Date(invoice?.booking?.checkIn).toLocaleDateString(
-                            'en-US', { month: 'short', day: 'numeric' }
-                          )}
-                        </td>
-                        <td className="px-4 py-3 font-semibold">{room.roomType} - Room {room.roomNumber}</td>
-                        <td className="px-4 py-3">{room.nights}</td>
-                        <td className="px-4 py-3">
-                          {hotel?.currency === 'USD' ? `$${room.basePriceUSD}` : `Rs. ${room.basePrice}`}
-                        </td>
-                        <td className="px-4 py-3 font-bold">{hotel?.currency === 'USD' ? `$${room.converted?.USD}` : `Rs. ${room.price}`}</td>
-                      </tr>
-                    ))}
                     {invoice?.items?.length > 0 && invoice?.items?.map((item, index) => (
                       <tr key={index} className="border-t border-gray-300">
                         <td className="px-4 py-3">
@@ -355,7 +335,6 @@ const Checkout = () => {
               >
               </textarea>
             <Button 
-              disabled={booking.status === "checked_out"} 
               className="w-full text-white ">
                 Apply Discount
             </Button>
@@ -370,7 +349,6 @@ const Checkout = () => {
                   onChange={(e) => setVatValue(e.target.value)}
                 />
               <Button 
-                disabled={booking.status === "checked_out"} 
                 className="w-full text-white mt-2">
                   Apply VAT
               </Button>
@@ -383,4 +361,4 @@ const Checkout = () => {
   );
 }
 
-export default Checkout
+export default CheckoutPOS

@@ -4,6 +4,9 @@ const axios = require('axios');
 const mongoose = require('mongoose');
 const path = require('path');
 const fs = require('fs');
+const Invoice = require('../models/Invoice');
+const User = require('../models/User');
+const { createInvoiceForPOSWalkIn, createInvoiceForPOSMember } = require('../services/invoiceService');
 
 let conversionRate = 132;
 
@@ -443,24 +446,106 @@ exports.createPOSBooking = async (req, res) => {
         items: orderItems
       });
       await booking.save({ session });
-    }
 
-    // if (paymentType === "instant") {
-    //   booking.payments.push({
-    //     type: paymentMethod,
-    //     amount: totalPrice,
-    //     converted: {USD: totalPriceUSD},
-    //     currency: "NPR",
-    //     roomNumber: roomExists.roomNumber,
-    //     createdAt: new Date(),
-    //     items: orderItems
-    //   });
-    //   await booking.save({ session });
-    // }
+      const invoice = await Invoice.findOne({ 
+        booking: booking._id, 
+        invoiceStatus: "in_progress" 
+      }).session(session); 
+      
+      if (invoice) { 
+        invoice.items.push(...orderItems); 
+        invoice.subTotal += totalPrice; 
+        invoice.subTotalUSD += totalPriceUSD; 
+        invoice.netTotal += totalPrice; 
+        invoice.netTotalUSD += totalPriceUSD; 
+        await invoice.save({ session }); 
+      }
+
+      order.invoice = invoice._id;
+      await order.save({ session });
+    }
+    
+
     await session.commitTransaction();
     session.endSession();
 
     return res.status(201).json({ message: "Room service order created", order, booking });
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error creating room service order:", error);
+    return res.status(500).json({ message: error.message });
+  }
+};
+
+exports.createPOSMember = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { userId, items } = req.body;
+
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      await session.abortTransaction();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    if (!items || items.length === 0) { 
+      await session.abortTransaction(); 
+      return res.status(400).json({ message: "Please enter items." }); 
+    }
+
+    let totalPrice = 0;
+    let totalPriceUSD = 0;
+    const orderItems = [];
+
+    for (const i of items) {
+      const item = await Item.findById(i.item).session(session);
+      if (!item) {
+        await session.abortTransaction();
+        return res.status(404).json({ message: "Item not found" });
+      }
+
+      const quantity = i.quantity || 1;
+      totalPrice += item.price * quantity;
+      totalPriceUSD += item.converted.USD * quantity;
+
+      orderItems.push({
+        item: item._id,
+        name: item.name,
+        quantity,
+        price: item.price,
+        converted:{USD: item.converted.USD}
+      });
+    }
+
+    const order = new POS({
+      customerType: "member",
+      customer: user._id,
+      items: orderItems,
+      totalPrice,
+      totalPriceUSD,
+      paymentType: "instant",
+      status: "paid"
+    });
+    await order.save({ session });
+
+    const invoice = await createInvoiceForPOSMember(
+      user._id,
+      orderItems,
+      totalPrice,
+      totalPriceUSD,
+      "instant"
+    );
+
+    order.invoice = invoice._id;
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return res.status(201).json({ message: "Room service order created", order,invoice });
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -513,10 +598,20 @@ exports.createPOSWalkIn = async (req, res) => {
     });
     await order.save({ session });
 
+    const invoice = await createInvoiceForPOSWalkIn(
+      orderItems,
+      totalPrice,
+      totalPriceUSD,
+      "instant"
+    );
+
+    order.invoice = invoice._id;
+    await order.save({ session });
+
     await session.commitTransaction();
     session.endSession();
 
-    return res.status(201).json({ message: "POS order created for walk-in customer", order });
+    return res.status(201).json({ message: "POS order created for walk-in customer", order, invoice });
   }catch (error) {
     await session.abortTransaction();
     session.endSession();
@@ -525,13 +620,82 @@ exports.createPOSWalkIn = async (req, res) => {
   }
 }
 
-exports.getPOSWalkInOrders = async (req, res) => {
+exports.getPOSOrders = async (req, res) => {
   try {
-    const orders = await POS.find({ customerType: "walkIn" })
-      .populate("items.item");
-    return res.json({ message: "Walk-in POS orders fetched successfully", orders });
+    const { type, search = "", page = 1, limit = 10 } = req.query;
+
+    // base filters
+    const filter = {};
+    if (type === "walkIn") {
+      filter.customerType = "walkIn";
+    } else if (type === "booking") {
+      filter.customerType = "booking";
+    }
+
+    // text search on a few string fields
+    if (search) {
+      const regex = new RegExp(search, "i");
+      filter.$or = [
+        { roomNumber: regex },
+        { paymentType: regex },
+        { status: regex },
+        { customerType: regex },
+      ];
+    }
+
+    const pageNumber = Math.max(parseInt(page, 10) || 1, 1);
+    const pageSize = Math.max(parseInt(limit, 10) || 10, 1);
+    const skip = (pageNumber - 1) * pageSize;
+
+    const [orders, total] = await Promise.all([
+      POS.find(filter)
+        .populate("items.item")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(pageSize),
+      POS.countDocuments(filter),
+    ]);
+
+    return res.json({
+      message: "POS orders fetched successfully",
+      orders,
+      pagination: {
+        total,
+        page: pageNumber,
+        limit: pageSize,
+        totalPages: Math.ceil(total / pageSize),
+      },
+    });
   } catch (error) {
-    console.error("Error fetching walk-in POS orders:", error);
+    console.error("Error fetching POS orders:", error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+exports.getPOSOrderById = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const order = await POS.findById(orderId).populate("items.item");
+    if (!order) {
+      return res.status(404).json({ message: "POS order not found" });
+    }
+    return res.json({ message: "POS order fetched successfully", order });
+  } catch (error) {
+    console.error("Error fetching POS order:", error);
+    return res.status(500).json({ message: error.message });
+  }
+}
+
+exports.getPOSOrderByUserId = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const order = await POS.find({ customer: userId }).populate("items.item");
+    if (!order) {
+      return res.status(404).json({ message: "POS order not found" });
+    }
+    return res.json({ message: "POS order fetched successfully", order });
+  } catch (error) {
+    console.error("Error fetching POS order:", error);
     return res.status(500).json({ message: error.message });
   }
 }

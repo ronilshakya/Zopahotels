@@ -22,7 +22,8 @@ import AllAdmins from './pages/admin/AllAdmins';
 import Signup from './pages/user/Signup';
 import EditUser from './pages/admin/EditUser';
 import BookingCalendar from './pages/admin/BookingCalender';
-import ReportsPage from './pages/admin/ReportsPage';
+import BookingReportsPage from './pages/admin/BookingReportsPage';
+import InvoiceReportsPage from './pages/admin/InvoiceReportsPage';
 import Rooms from './pages/user/Rooms';
 import Profile from './pages/user/Profile';
 import EditProfile from './pages/user/EditProfile';
@@ -46,6 +47,10 @@ import AddDirectCheckIn from './pages/admin/AddDirectCheckIn';
 import Checkout from './pages/admin/Checkout';
 import POSCatalog from './pages/admin/POSCatalog';
 import POSTerminal from './pages/admin/POSTerminal';
+import InvoiceList from './pages/admin/InvoiceList';
+import InvoiceDetail from './pages/admin/InvoiceDetail';
+import CheckoutPOS from './pages/admin/CheckoutPOS';
+import POSTerminalUser from './pages/admin/POSTerminalUser';
 
 // Wrapper to get `mode` from URL and pass as prop
 const HotelFormWrapper = () => {
@@ -98,7 +103,8 @@ export default function App() {
           <Route path="all-admins" element={<AllAdmins />} />
           <Route path="edit-user/:id" element={<EditUser />} />
           <Route path="booking-calender" element={<BookingCalendar />} />
-          <Route path="reports" element={<ReportsPage />} />
+          <Route path="booking-reports" element={<BookingReportsPage />} />
+          <Route path="invoice-reports" element={<InvoiceReportsPage />} />
           <Route path="settings" element={<Settings />} />
           <Route path="amenities" element={<Amenities />} />
           <Route path="booking-sources" element={<BookingSource />} />
@@ -112,6 +118,10 @@ export default function App() {
           <Route path="pos-catalog" element={<POSCatalog />} />
           <Route path="pos-terminal/:bookingId" element={<POSTerminal key={window.location.pathname}/>} />
           <Route path="pos-terminal" element={<POSTerminal />} />
+          <Route path="pos-terminal-user/:userId" element={<POSTerminalUser />} />
+          <Route path="invoice-list" element={<InvoiceList />} />
+          <Route path="invoice-detail/:id" element={<InvoiceDetail />} />
+          <Route path="checkout-pos/:id" element={<CheckoutPOS />} />
 
           {/* Hotel form routes */}
           <Route path="hotel-form/:mode" element={<HotelFormWrapper />} />

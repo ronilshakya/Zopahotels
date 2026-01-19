@@ -170,7 +170,7 @@ const AddDirectCheckIn = () => {
       const computedStatus = allRoomsAssigned ? 'checked_in' : 'pending';
 
       const payload = {
-        checkIn: form.checkIn,
+        // checkIn: form.checkIn,
         checkOut: form.checkOut,
         rooms: form.selectedRooms.map(r => ({
           roomId: r.roomId,
@@ -303,7 +303,7 @@ const AddDirectCheckIn = () => {
             <div className="flex flex-col gap-4">
                 <div>
                 <label className="block text-sm font-medium text-gray-700">Check-In</label>
-                <input type="date" name="checkIn" value={form.checkIn} onChange={handleChange} required
+                <input type="date" name="checkIn" value={form.checkIn} onChange={handleChange} readOnly disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500" />
                 </div>
                 <div>

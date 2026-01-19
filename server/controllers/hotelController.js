@@ -10,7 +10,7 @@ exports.createHotel = async (req, res) => {
             return res.status(400).json({ message: "Only one hotel can be created" });
         }
 
-        let { name, description, address, phone, email,currency,amenities,bookingSource,arrivalTime,departureTime } = req.body;
+        let { name, description, address, phone, email,currency,amenities,bookingSource,arrivalTime,departureTime,enableVat } = req.body;
 
          // Parse amenities if it's a string
         if (typeof amenities === "string") {
@@ -39,7 +39,8 @@ exports.createHotel = async (req, res) => {
             amenities,
             bookingSource,
             arrivalTime,
-            departureTime
+            departureTime,
+            enableVat
         });
 
         res.status(201).json({ message: "Hotel created successfully", hotel });
@@ -81,7 +82,8 @@ exports.updateHotel = async (req, res) => {
       "amenities",
       "bookingSource",
       "arrivalTime",
-      "departureTime"
+      "departureTime",
+      "enableVat"
     ];
 
     allowedFields.forEach((field) => {

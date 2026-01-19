@@ -238,7 +238,7 @@ const AllCheckins = () => {
                         </button>
                         
                         <button
-                          onClick={() => navigate(`/admin/add-food-service/${b._id}`)}
+                          onClick={() => navigate(`/admin/pos-terminal/${b._id}`)}
                           className="bg-green-600 hover:bg-green-700 text-white px-2 py-2 rounded-md cursor-pointer"
                           title="Add Food Service"
                         >

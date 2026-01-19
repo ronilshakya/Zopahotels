@@ -22,18 +22,15 @@ const BookingSchema = new mongoose.Schema({
     },
     guestAddress: { 
         type: String,
-        // required: function() { return this.customerType === "Guest"; } 
     },
     guestCity: { 
         type: String,
-        // required: function() { return this.customerType === "Guest"; } 
     },
     guestZipCode: { 
         type: String,
     },
     guestCountry: { 
         type: String,
-        // required: function() { return this.customerType === "Guest"; } 
     },
 
     customerType: { 
@@ -49,6 +46,9 @@ const BookingSchema = new mongoose.Schema({
                 ref: "Room",
                 required: true
             },
+            roomType: {
+                type: String
+            },
             roomNumber: {
                 type: String,
                 required: true
@@ -63,6 +63,12 @@ const BookingSchema = new mongoose.Schema({
                 required: true,
                 default: 0
             },
+            nights: {
+                type: Number,
+                default: 1
+            },
+            basePrice: Number,
+            basePriceUSD: Number,
             price: Number, 
             converted: { USD: Number }
         }

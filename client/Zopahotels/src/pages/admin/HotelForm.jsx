@@ -4,6 +4,7 @@ import { createHotel, getHotel, updateHotel } from "../../api/hotelApi";
 import Swal from "sweetalert2";
 import { useHotel } from "../../context/HotelContext";
 import { API_URL } from "../../config";
+import ToggleSwitch from "../../components/ToggleSwitch";
 
 const HotelForm = ({ mode }) => {
   const { setHotel } = useHotel();
@@ -56,6 +57,7 @@ const HotelForm = ({ mode }) => {
             amenities: amenitiesArray.length ? amenitiesArray : [""],
             arrivalTime: hotel.arrivalTime || "",
             departureTime: hotel.departureTime || "",
+            enableVat: hotel.enableVat || false,
           });
 
           setExistingLogo(hotel.logo ? `${API_URL}uploads/${hotel.logo}` : null);
@@ -128,162 +130,176 @@ const HotelForm = ({ mode }) => {
 
   console.log(hotelData)
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
-    <div className="max-w-2xl mx-auto p-6 bg-white rounded-2xl shadow-lg">
-      <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
-        {mode === "edit" ? "Edit Hotel Details" : "Add New Hotel"}
-      </h1>
-
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-6">
-        {/* Name */}
+    <>
+      <form onSubmit={handleSubmit}>
+      <div className='bg-white flex justify-between items-center px-6 py-4 border-b border-gray-300'>
         <div>
-          <label className="text-sm font-medium text-gray-700">Hotel Name</label>
-          <input
-            type="text"
-            name="name"
-            value={hotelData.name}
-            onChange={handleChange}
-            placeholder="Enter hotel name"
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-            required
-          />
+          <h1 className='px-2 py-1 text-2xl font-bold'>Hotel Settings</h1>
+          <p className='px-2 py-1 text-sm text-gray-500'>Manage hotel</p>
         </div>
-
-        {/* Description */}
-        <div>
-          <label className="text-sm font-medium text-gray-700">Description</label>
-          <textarea
-            name="description"
-            value={hotelData.description}
-            onChange={handleChange}
-            placeholder="Enter hotel description"
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white resize-none"
-            rows={4}
-          />
-        </div>
-
-        {/* Address */}
-        <div>
-          <label className="text-sm font-medium text-gray-700">Address</label>
-          <input
-            type="text"
-            name="address"
-            value={hotelData.address}
-            onChange={handleChange}
-            placeholder="Enter address"
-            className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-          />
-        </div>
-
-        {/* Phone & Email */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium text-gray-700">Phone</label>
-            <input
-              type="text"
-              name="phone"
-              value={hotelData.phone}
-              onChange={handleChange}
-              placeholder="Enter phone"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium text-gray-700">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={hotelData.email}
-              onChange={handleChange}
-              placeholder="Enter email"
-              className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
-            />
-          </div>
-        </div>
-
-
-        {/* Logo */}
-        <div>
-          <label className="text-sm font-medium text-gray-700 mb-2 block">Hotel Logo</label>
-          <div className="flex flex-col gap-4">
-           
-            {!preview && existingLogo && (
-              <img
-                src={existingLogo}
-                alt="Current Logo"
-                className="w-full h-full object-cover border rounded-lg shadow"
-              />
-            )}
-            {preview && (
-              <img
-                src={preview}
-                alt="Logo Preview"
-                className="w-32 h-32 object-cover border rounded-lg shadow"
-              />
-            )}
-             <input
-              type="file"
-              name="logo"
-              accept="image/*"
-              className="bg-white px-4 py-2 border border-gray-300 rounded-lg"
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
-        {/* Currency */}
-        <div>
-          <label className="block mb-2 font-medium">Currency</label>
-          <select
-            name="currency"
-            value={hotelData.currency}
-            onChange={handleChange}
-            className="swal2-input border border-gray-300 rounded-lg p-2"
-            required
-          >
-            <option value="USD">USD – US Dollar ($)</option>
-            <option value="NPR">NPR – Nepalese Rupee (₨)</option>
-          </select>
-        </div>
-
-        {/* Booking times */}
-        <div className="grid grid-cols-2">
-          <div>
-            <label className="block mb-2 font-medium">Arrival Time</label>
-            <input 
-              type="time" 
-              placeholder="Arrival Time" 
-              className="border border-gray-300 p-2 rounded-lg" 
-              value={hotelData.arrivalTime}
-              onChange={handleChange}
-              name="arrivalTime"
-              />
-          </div>
-        
-          <div>
-            <label className="block mb-2 font-medium">Departure Time</label>
-            <input 
-              type="time" 
-              placeholder="Departure Time" 
-              className="border border-gray-300 p-2 rounded-lg" 
-              name="departureTime"
-              value={hotelData.departureTime}
-              onChange={handleChange}
-            />
-          </div>
-        </div>
-
         {/* Submit */}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200"
+          className="p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 cursor-pointer"
         >
           {loading ? "Saving..." : mode === "edit" ? "Update Hotel" : "Add Hotel"}
         </button>
+      </div>
+    <div className="min-h-screen bg-gray-100 p-6">
+    <div className=" ">
+        <div className="grid grid-cols-12 gap-6">
+          <div className="col-span-12 md:col-span-8 p-6 flex flex-col gap-4 bg-white rounded-2xl shadow-lg">
+            
+            {/* Name */}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Hotel Name</label>
+              <input
+                type="text"
+                name="name"
+                value={hotelData.name}
+                onChange={handleChange}
+                placeholder="Enter hotel name"
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+                required
+              />
+            </div>
+
+            {/* Description */}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Description</label>
+              <textarea
+                name="description"
+                value={hotelData.description}
+                onChange={handleChange}
+                placeholder="Enter hotel description"
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white resize-none"
+                rows={4}
+              />
+            </div>
+
+            {/* Address */}
+            <div>
+              <label className="text-sm font-medium text-gray-700">Address</label>
+              <input
+                type="text"
+                name="address"
+                value={hotelData.address}
+                onChange={handleChange}
+                placeholder="Enter address"
+                className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+              />
+            </div>
+
+            {/* Phone & Email */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">Phone</label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={hotelData.phone}
+                  onChange={handleChange}
+                  placeholder="Enter phone"
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={hotelData.email}
+                  onChange={handleChange}
+                  placeholder="Enter email"
+                  className="mt-1 block w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm bg-white"
+                />
+              </div>
+            </div>
+            {/* Booking times */}
+            <div className="grid grid-cols-2">
+              <div>
+                <label className="block mb-2 font-medium">Arrival Time</label>
+                <input 
+                  type="time" 
+                  placeholder="Arrival Time" 
+                  className="border border-gray-300 p-2 rounded-lg" 
+                  value={hotelData.arrivalTime}
+                  onChange={handleChange}
+                  name="arrivalTime"
+                  />
+              </div>
+            
+              <div>
+                <label className="block mb-2 font-medium">Departure Time</label>
+                <input 
+                  type="time" 
+                  placeholder="Departure Time" 
+                  className="border border-gray-300 p-2 rounded-lg" 
+                  name="departureTime"
+                  value={hotelData.departureTime}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="col-span-12 md:col-span-4 p-6 flex flex-col gap-4 bg-white rounded-2xl shadow-lg">
+            {/* Logo */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">Hotel Logo</label>
+              <div className="flex flex-col gap-4">
+                {!preview && existingLogo && (
+                  <img
+                    src={existingLogo}
+                    alt="Current Logo"
+                    className="w-full h-full object-cover border rounded-lg shadow"
+                  />
+                )}
+                {preview && (
+                  <img
+                    src={preview}
+                    alt="Logo Preview"
+                    className="w-32 h-32 object-cover border rounded-lg shadow"
+                  />
+                )}
+                <input
+                  type="file"
+                  name="logo"
+                  accept="image/*"
+                  className="bg-white px-4 py-2 border border-gray-300 rounded-lg"
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+
+            {/* Currency */}
+            <div>
+              <label className="block mb-2 font-medium">Currency</label>
+              <select
+                name="currency"
+                value={hotelData.currency}
+                onChange={handleChange}
+                className="swal2-input border border-gray-300 rounded-lg p-2"
+                required
+              >
+                <option value="USD">USD – US Dollar ($)</option>
+                <option value="NPR">NPR – Nepalese Rupee (₨)</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block mb-2 font-medium">Enable VAT</label>
+              <ToggleSwitch enabled={hotelData.enableVat} onChange={(value) => setHotelData({...hotelData, enableVat: value})} />
+            </div>
+          </div>
+        </div>
+
+        
+    </div>
+  </div>
       </form>
-    </div>
-    </div>
+  </>
   );
 };
 

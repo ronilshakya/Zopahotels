@@ -9,7 +9,7 @@ import { IoSearch } from "react-icons/io5";
 import { 
     createPOS,
     createPOSWalkIn,
-    getPOSWalkInOrders,
+    getPOSOrders,
     searchItems 
 } from '../../api/posApi';
 import { deleteDraftCart, getCartByBookingAndRoom, saveDraft } from '../../api/cartApi';
@@ -30,6 +30,7 @@ import { FaUserPlus } from "react-icons/fa";
 import { FaBed } from "react-icons/fa6";
 import { IoCheckmarkCircle } from "react-icons/io5";
 import { useNavigate } from 'react-router-dom';
+import { getAllUsers, searchUsers } from '../../api/authApi';
 
 const POSTerminal = () => {
     const { bookingId } = useParams();
@@ -50,10 +51,22 @@ const POSTerminal = () => {
     const [cartStatus, setCartStatus] = useState(null);
     const [draftLoading, setDraftLoading] = useState(false);
     const [customerType, setCustomerType] = useState("walkIn");
-    const [walkInOrders, setWalkInOrders] = useState([]);
+
+    const [walkInOrders, setWalkInOrders] = useState({
+        orders: [],
+        pagination: {}
+    });
+    const [orderHistorySearch, setOrderHistorySearch] = useState("");
+    const [orderHistoryPage, setOrderHistoryPage] = useState(1);
+    const orderHistoryLimit = 10;
+
+    const [orderHistoryTab, setOrderHistoryTab] = useState("All");
+    const [foodImageLoading, setFoodImageLoading] = useState(false)
 
     const [activeBookings, setActiveBookings] = useState([]);
+    const [users, setUsers] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [searchMemberQuery, setSearchMemberQuery] = useState('');
     const [pagination, setPagination] = useState({
         total: 0,
         page: 1,
@@ -61,8 +74,12 @@ const POSTerminal = () => {
         totalPages: 0
     });
     const [isSearching, setIsSearching] = useState(false);
+    const [isMemberSearching, setIsMemberSearching] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
+    const [showMemberDropdown, setShowMemberDropdown] = useState(false);
+
     const searchRef = useRef(null);
+    const searchMemberRef = useRef(null);
 
     const {hotel} = useHotel();
     const navigate = useNavigate();
@@ -82,6 +99,7 @@ const POSTerminal = () => {
             setLoading(false);
         }
     }
+
     const fetchCheckedInBookings = async (search = '', page = 1) => {
         try {
         setIsSearching(true);
@@ -94,6 +112,19 @@ const POSTerminal = () => {
         setIsSearching(false);
         }
     };
+
+    const fetchUsers = async (search = '') => {
+        try {
+        setIsMemberSearching(true);
+        const res = await searchUsers(token, search, 1, 3);
+        setUsers(res.users);
+        } catch (error) {
+        console.error("Failed to fetch users", error);
+        } finally {
+        setIsMemberSearching(false);
+        }
+    };
+
     useEffect(() => {
          if (!showDropdown) return;
         const timer = setTimeout(() => {
@@ -103,8 +134,20 @@ const POSTerminal = () => {
         return () => clearTimeout(timer); // Cleanup on each keystroke
     }, [searchQuery,showDropdown]);
 
+    useEffect(() => {
+         if (!showMemberDropdown) return;
+        const timer = setTimeout(() => {
+            fetchUsers(searchMemberQuery);
+        }, 500); // Wait 500ms after user stops typing
+
+        return () => clearTimeout(timer); // Cleanup on each keystroke
+    }, [searchMemberQuery,showMemberDropdown]);
+
     const handleSearch = (e) => {
         setSearchQuery(e.target.value);
+    };
+    const handleMemberSearch = (e) => {
+        setSearchMemberQuery(e.target.value);
     };
 
     useEffect(() => {
@@ -118,22 +161,47 @@ const POSTerminal = () => {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
-    const fetchWalkInOrders= async () =>{  
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (searchMemberRef.current && !searchMemberRef.current.contains(event.target)) {
+                setShowMemberDropdown(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const fetchWalkInOrders = async (
+        type = "all",
+        searchText = "",
+        pageNumber = 1
+        ) => {
         try {
-            const res = await getPOSWalkInOrders(token);
+            const res = await getPOSOrders(
+            token,
+            type,
+            searchText,
+            pageNumber,
+            orderHistoryLimit
+            );
             setWalkInOrders(res);
         } catch (error) {
-            console.log(error)
+            console.log(error);
         }
-    }
+        };
+
 
     const fetchFoodItems= async () =>{
         try {
+            setFoodImageLoading(true);
             const res = await searchItems(token,query,page,limit);
             setItems(res.items);
             setTotalPages(res.totalPages);
         } catch (error) {
             console.log(error)
+        } finally {
+            setFoodImageLoading(false)
         }
     }
     
@@ -146,10 +214,10 @@ const POSTerminal = () => {
         if(!isWalkInAndBooking){
             fetchBooking();
         }else{
-            fetchWalkInOrders();
+            fetchWalkInOrders("all", orderHistorySearch, orderHistoryPage);
         }
         fetchCheckedInBookings();
-    },[])
+    },[orderHistoryPage])
 
 
     const tabs = [ 
@@ -296,7 +364,7 @@ const POSTerminal = () => {
             }).then(async (result) => { 
                 if (result.isConfirmed) { 
                     try {
-                        await createPOSWalkIn(token,transformCartToOrderItems(cart))
+                        const res = await createPOSWalkIn(token,transformCartToOrderItems(cart))
                         Swal.fire({ 
                             position: "top-end", 
                             icon: "success", 
@@ -306,6 +374,7 @@ const POSTerminal = () => {
                         });
                         setCart([]); 
                         setCartStatus(null);
+                        navigate(`/admin/checkout-pos/${res.invoice._id}`);
                     } catch (err) {
                         Swal.fire("Error", err.response?.data?.message || err.message, "error");
                         console.log(err)
@@ -329,21 +398,101 @@ const POSTerminal = () => {
                                 {/* walk in */}
                                 <div 
                                     className={`border-2  rounded-lg p-4
-                                        ${customerType === "walkIn" ? "bg-blue-50 border-blue-600":"border-gray-300"}
+                                        ${(customerType === "walkIn" || customerType === "member") ? "bg-blue-50 border-blue-600":"border-gray-300"}
                                     `}
-                                    onClick={() => setCustomerType("walkIn")}
+                                    // onClick={() => setCustomerType("walkIn")}
                                 >
                                     <div className='flex justify-between items-center mb-4'>
                                         <div className='flex items-center gap-2'> 
-                                            <div className={`${customerType === "walkIn" ? "bg-blue-600 ":"bg-gray-300"} p-2 rounded-xl`}>
-                                                <FaUserPlus size={20} className={`${customerType === "walkIn" ? "text-white ":""}`} />
+                                            <div className={`${customerType === "walkIn" || customerType === "member" ? "bg-blue-600 ":"bg-gray-300"} p-2 rounded-xl`}>
+                                                <FaUserPlus size={20} className={`${customerType === "walkIn" || customerType === "member" ? "text-white ":""}`} />
                                             </div>
-                                            <h1 className='font-semibold text-lg'>Walk in customer</h1>
+                                            <h1 className='font-semibold text-lg'>Walk-in Customer</h1>
                                         </div>
-                                        {customerType === "walkIn" && <IoCheckmarkCircle size={25} className='text-blue-600'/>}
+                                        {(customerType === "walkIn" || customerType === "member") && <IoCheckmarkCircle size={25} className='text-blue-600'/>}
+                                    </div>     
+                                    <div className="relative">
+                                        <div className='flex items-center border border-gray-300 bg-white rounded-xl w-full px-3 py-1 gap-2 mb-1'>
+                                            <select 
+                                                className="grow focus:outline-0" 
+                                                value={customerType} 
+                                                onChange={(e) => setCustomerType(e.target.value)} 
+                                            > 
+                                                <option value="walkIn">Walk-in Customer</option> 
+                                                <option value="member">Registered Customer</option> 
+                                            </select>
+                                        </div>
+                                        {/* ------------------------------------------------- */}
+                                        {customerType === "member" && (
+                                        <div className="relative" ref={searchMemberRef}>
+                                            <div className='flex items-center border border-gray-300 bg-white rounded-xl w-full px-3 py-1 gap-2 mb-1'>
+                                                    <IoSearchSharp size={20} className={isMemberSearching ? 'animate-pulse' : ''} />
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Search members"
+                                                        className="grow focus:outline-0"
+                                                        value={searchMemberQuery}
+                                                        onChange={handleMemberSearch}
+                                                        onFocus={() => setShowMemberDropdown(true)}
+                                                    />
+                                            </div>
+                                            {/* Dropdown results */}
+                                            {showMemberDropdown && (
+                                                <div className="absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-96 overflow-y-auto">
+                                                    {isMemberSearching ? (
+                                                        <div className="text-center py-8">
+                                                            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+                                                            <p className="text-gray-500 mt-2">Searching...</p>
+                                                        </div>
+                                                    ) : users.length > 0 ? (
+                                                        <>
+                                                            {users.map(user => (
+                                                                <div 
+                                                                    key={user._id} 
+                                                                    className="border-b border-gray-200 last:border-b-0 p-3 cursor-pointer hover:bg-gray-50 transition"
+                                                                    onClick={() => {
+                                                                        // Handle user selection
+                                                                        navigate(`/admin/pos-terminal-user/${user._id}`);
+                                                                        setShowMemberDropdown(false);
+                                                                    }}
+                                                                >
+                                                                    <div className="flex justify-between items-start">
+                                                                        <div className="flex-1">
+                                                                            <p className="font-semibold text-gray-800">
+                                                                                {user.name}
+                                                                            </p>
+                                                                            <p className="text-sm text-gray-600 mt-1">
+                                                                                Email: {user.email}
+                                                                            </p>
+                                                                            <div className="flex gap-4 text-xs text-gray-500 mt-1">
+                                                                                <span>ID: {user._id}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            
+                                                        </>
+                                                    ) : (
+                                                        <div className="text-center py-8">
+                                                            <p className="text-gray-500">No users found</p>
+                                                            {searchQuery && (
+                                                                <p className="text-sm text-gray-400 mt-1">
+                                                                    Try a different search term
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+                                        )}
                                     </div>
+                                    {/* -------------------------- */}
                                     <p className='text-sm text-gray-500'>Direct entry for non-staying guests. Payment required at checkout.</p>
                                 </div>
+
+                               
 
                                 {/* Booking  */}
                                 <div 
@@ -357,7 +506,7 @@ const POSTerminal = () => {
                                             <div className={`${customerType === "booking" ? "bg-blue-600 ":"bg-gray-300"} p-2 rounded-xl`}>
                                                 <FaBed size={20} className={`${customerType === "booking" ? "text-white ":""}`} />
                                             </div>
-                                            <h1 className='font-semibold text-lg'>Select Booking</h1>
+                                            <h1 className='font-semibold text-lg'>Select From Booking</h1>
                                         </div>
                                         {customerType === "booking" && <IoCheckmarkCircle size={25} className='text-blue-600'/>}
                                     </div>
@@ -552,9 +701,17 @@ const POSTerminal = () => {
                                                         {filteredItems.map((item)=>(
                                                             <div key={item._id} className='border border-gray-300 rounded-xl overflow-hidden'>
                                                                 {item.image ? (
-                                                                    <img src={`${API_URL}uploads/pos-items/${item.image}`} className='h-40 w-full object-cover' alt="food" />
+                                                                    foodImageLoading ? (
+                                                                        <img src={preloader} className='h-40 w-full object-cover' alt='preloader'/>
+                                                                    ):(
+                                                                        <img src={`${API_URL}uploads/pos-items/${item.image}`} className='h-40 w-full object-cover' alt="food" />
+                                                                    )
                                                                 ):(
-                                                                    <img src={placeholder} className='h-40 w-full object-cover' alt="foodpl" />                                                                    
+                                                                     foodImageLoading ? (
+                                                                        <img src={preloader} className='h-40 w-full object-cover' alt='preloader'/>
+                                                                    ):(
+                                                                    <img src={placeholder} className='h-40 w-full object-cover' alt="foodpl" />       
+                                                                    )                                                             
                                                                 )}
                                                                 <div className='p-4'>
                                                                     <h1 className='text-lg font-semibold mb-1'>{item.name}</h1>
@@ -607,53 +764,111 @@ const POSTerminal = () => {
                                                 {walkInOrders.length === 0 ? (
                                                     <p>No Orders found</p>
                                                 ):(
-                                                    <div className="overflow-x-auto">
-                                                        <table className="w-full border border-gray-300 table-auto border-collapse">
-                                                            <thead>
-                                                                <tr className="bg-gray-200 text-gray-700">
-                                                                    <th className="px-4 py-3 text-left font-semibold text-sm">Date</th>
-                                                                    <th className="px-4 py-3 text-left font-semibold text-sm">Items</th>
-                                                                    <th className="px-4 py-3 text-left font-semibold text-sm">Total Amount</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                {walkInOrders.orders.map(order =>(
-                                                                    <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
-                                                                        <td className="px-4 py-3 text-gray-600 text-sm">
-                                                                            {new Date(order.createdAt).toLocaleString("en-US", {
-                                                                                year: "numeric",
-                                                                                month: "short",
-                                                                                day: "numeric",
-                                                                                hour: "numeric",
-                                                                                minute: "numeric",
-                                                                                second: "numeric",
-                                                                                hour12: true
-                                                                            })}
-                                                                        </td>
-                                                                        <td className="px-4 py-3 text-gray-600 text-sm">
-                                                                            {order.items.length > 0 && (
-                                                                                <p>
-                                                                                {order.items
-                                                                                    .map(i => i.item?.name || i.name)
-                                                                                    .slice(0, 3) // show first 3 names
-                                                                                    .join(", ")}
-                                                                                {order.items.length > 3 && " ..."}
-                                                                                </p>
-                                                                            )}
-                                                                        </td>
-                                                                        <td className="px-4 py-3 text-gray-600 text-sm">
-                                                                             {hotel.currency === "USD" ? (
-                                                                                `$ ${order.totalPriceUSD.toFixed(2)}`
-                                                                            ):(
-                                                                                `Rs. ${order.totalPrice}`
-                                                                            )}
-                                                                        </td>
-                                                                        </tr>
-                                                                ))}
+                                                <>
+                                                    <div className='flex justify-between items-center mb-5'>
+                                                        <div>
+                                                            <h1 className='font-semibold text-lg'>Recent Transactions</h1>
+                                                            <p className="text-gray-600 text-sm">View orders from bookings and walk-in customers.</p>
+                                                            {/* <input
+                                                                type="text"
+                                                                placeholder="Search orders..."
+                                                                value={orderHistorySearch}
+                                                                onChange={(e) => {
+                                                                    setOrderHistorySearch(e.target.value);
+                                                                    setOrderHistoryPage(1); // reset to first page on new search
+                                                                }}
+                                                                className="border px-3 py-2 rounded w-64"
+                                                                /> */}
 
-                                                            </tbody>
-                                                        </table>
+                                                        </div>
                                                     </div>
+                                                    <div className="overflow-x-auto space-y-8">
+                                                {/* Walk-In Orders Table */}
+                                                <div>
+                                                    <h2 className="text-md font-semibold mb-2">Walk-In Orders</h2>
+                                                    <table className="w-full border border-gray-300 table-auto border-collapse">
+                                                    <thead>
+                                                        <tr className="bg-gray-200 text-gray-700">
+                                                        <th className="px-4 py-3 text-left font-semibold text-sm">Date</th>
+                                                        <th className="px-4 py-3 text-left font-semibold text-sm">Items</th>
+                                                        <th className="px-4 py-3 text-left font-semibold text-sm">Total Amount</th>
+                                                        <th className="px-4 py-3 text-left font-semibold text-sm">Actions</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {walkInOrders.orders
+                                                        .map(order => (
+                                                            <tr key={order._id} className="border-b border-gray-200 hover:bg-gray-50 transition duration-200">
+                                                            <td className="px-4 py-3 text-gray-600 text-sm">
+                                                                {new Date(order.createdAt).toLocaleString("en-US", {
+                                                                year: "numeric",
+                                                                month: "short",
+                                                                day: "numeric",
+                                                                hour: "numeric",
+                                                                minute: "numeric",
+                                                                second: "numeric",
+                                                                hour12: true
+                                                                })}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-gray-600 text-sm">
+                                                                {order.items.length > 0 && (
+                                                                <p>
+                                                                    {order.items
+                                                                    .map(i => i.item?.name || i.name)
+                                                                    .slice(0, 3)
+                                                                    .join(", ")}
+                                                                    {order.items.length > 3 && " ..."}
+                                                                </p>
+                                                                )}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-gray-600 text-sm">
+                                                                {hotel.currency === "USD"
+                                                                ? `$ ${order.totalPriceUSD.toFixed(2)}`
+                                                                : `Rs. ${order.totalPrice}`}
+                                                            </td>
+                                                            <td className="px-4 py-3 text-gray-600 text-sm">
+                                                                <button 
+                                                                    className="bg-blue-500 text-white px-2 py-1 rounded hover:bg-blue-600 transition duration-200"
+                                                                    onClick={()=>{ navigate(`/admin/checkout-pos/${order.invoice}`) }}
+                                                                >
+                                                                    View
+                                                                </button>
+                                                            </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                    </table>
+                                                    <div className="flex justify-end items-center gap-2 mt-6">
+  <button
+    disabled={orderHistoryPage === 1}
+    onClick={() => setOrderHistoryPage(p => p - 1)}
+    className="px-3 py-1 border rounded disabled:opacity-50"
+  >
+    Prev
+  </button>
+
+  <span className="text-sm">
+    Page {walkInOrders.pagination?.page} of{" "}
+    {walkInOrders.pagination?.totalPages}
+  </span>
+
+  <button
+    disabled={
+      orderHistoryPage === walkInOrders.pagination?.totalPages
+    }
+    onClick={() => setOrderHistoryPage(p => p + 1)}
+    className="px-3 py-1 border rounded disabled:opacity-50"
+  >
+    Next
+  </button>
+</div>
+
+
+                                                </div>
+
+                                                </div>
+
+                                                </>
                                                 )}
                                             </div>
                                         ):(
@@ -849,9 +1064,9 @@ const POSTerminal = () => {
                                                     <h1 className='font-semibold text-lg mb-2'>{cartItem.name}</h1>
                                                     <span className="ml-4 font-semibold text-lg">
                                                         {hotel.currency === "USD" ? (
-                                                            `$ ${cartItem.converted.USD * cartItem.quantity}`
+                                                            `$ ${(cartItem.converted.USD * cartItem.quantity).toFixed(2)}`
                                                         ):(
-                                                            `Rs. ${cartItem.price* cartItem.quantity}`
+                                                            `Rs. ${(cartItem.price * cartItem.quantity).toFixed(2)}`
                                                         )}
                                                     </span>
                                                 </div>
@@ -935,6 +1150,7 @@ const POSTerminal = () => {
                                     <Button 
                                         className="grow flex justify-center items-center gap-1 cursor-pointer"
                                         onClick={handleWalkInPOSOrder}
+                                        disabled={customerType === "member" || customerType === "booking"}
                                     >
                                         Instant Order <BsArrowRight size={20}/>
                                     </Button>

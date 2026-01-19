@@ -69,10 +69,19 @@ const ItemSchema = new mongoose.Schema({
 });
 
 const POSSchema = new mongoose.Schema({
-    customerType: { type: String, enum: ["booking", "walkIn"], required: true },
+    customerType: { 
+      type: String, 
+      enum: ["booking", "walkIn", "member"], 
+      required: true 
+    },
     booking: { 
         type: mongoose.Schema.Types.ObjectId, 
         ref: "Booking", 
+        default: null
+    }, 
+    customer: { 
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: "User", 
         default: null
     }, 
     roomBookingEntryId: { 
@@ -108,6 +117,7 @@ const POSSchema = new mongoose.Schema({
         enum: ["requested", "paid", "posted"], 
         default: "requested" 
     },
+    invoice: {type: mongoose.Schema.Types.ObjectId, ref: "Invoice",default: null},
     createdAt: { type: Date, default: Date.now }
 })
 

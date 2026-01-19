@@ -6,6 +6,8 @@ const Hotel = require("../models/Hotel");
 const {POS} = require("../models/Pos");
 const Cart = require("../models/Cart");
 const { v4: uuidv4 } = require("uuid");
+const {createInvoiceOnCheckIn, updateInvoiceFromBooking, finalizeInvoiceOnCheckout} = require("../services/invoiceService");
+const Invoice = require("../models/Invoice");
 
 const buildDateTime = (dateStr, timeStr) => {
   const [hours, minutes] = timeStr.split(':').map(Number);
@@ -82,9 +84,13 @@ exports.createBooking = async (req, res) => {
       for (let i = 0; i < quantity; i++) { 
         bookingRooms.push({ 
           roomId: r.roomId, 
+          roomType: roomDoc.type,
           roomNumber: "Yet to be assigned", 
           adults, 
           children, 
+          nights,
+          basePrice: pricingEntry.price,
+          basePriceUSD: pricingEntry.converted?.USD,
           price: pricingEntry.price * nights, 
           converted: { USD: pricingEntry.converted?.USD * nights } }); 
         } 
@@ -220,9 +226,13 @@ exports.createBookingAdmin = async (req, res) => {
   for (let i = 0; i < quantity; i++) {
     bookingRooms.push({
       roomId: r.roomId,
+      roomType: roomDoc.type,
       roomNumber: "Yet to be assigned",
       adults,
       children,
+      nights,
+      basePrice: pricingEntry.price,
+      basePriceUSD: pricingEntry.converted?.USD,
       price: pricingEntry.price * nights, 
       converted: { USD: pricingEntry.converted?.USD * nights }
     });
@@ -490,9 +500,12 @@ exports.updateBooking = async (req, res) => {
 
         updatedRooms.push({ 
           roomId: r.roomId, 
+          roomType: roomDoc.type,
           roomNumber, 
           adults, 
           children,
+          basePrice: pricingEntry.price,
+          basePriceUSD: pricingEntry.converted?.USD,
           price: pricingEntry.price * nights, 
           converted: { USD: pricingEntry.converted?.USD * nights } 
         });
@@ -527,6 +540,9 @@ exports.updateBooking = async (req, res) => {
 
 
     await booking.save();
+
+    await updateInvoiceFromBooking(booking);
+
     res.json({ message: "Booking updated successfully", booking });
 
   } catch (error) {
@@ -556,6 +572,7 @@ exports.deleteBooking = async (req, res) => {
     }
     await POS.deleteMany({ booking: booking._id });
     await Cart.deleteMany({ booking: booking._id });
+    await Invoice.deleteMany({ booking: booking._id });
     await booking.deleteOne();
     res.json({ message: "Booking deleted successfully" });
   } catch (error) {
@@ -589,38 +606,64 @@ exports.getReport = async (req, res) => {
     const fromDate = new Date(from);
     const toDate = new Date(to);
 
+    // Only checked_in and checked_out bookings
     const bookings = await Booking.find({
       checkIn: { $lte: toDate },
       checkOut: { $gte: fromDate },
+      status: { $in: ["checked_in", "checked_out"] }
     })
-      .populate("user", "name email")
-      .populate("rooms.roomId", "type price");
+    .populate("user", "name email")
+    .populate("rooms.roomId", "type price");
+
+    const summaryBookings = await Booking.find({
+      checkIn: { $lte: toDate },
+      checkOut: { $gte: fromDate },
+      status: { $in: ["checked_in", "checked_out","confirmed", "pending", "cancelled"] }
+    })
 
     // Summary calculations
     const summary = {
-      totalBookings: bookings.length,
-      confirmed: bookings.filter(b => b.status === "confirmed").length,
-      pending: bookings.filter(b => b.status === "pending").length,
-      cancelled: bookings.filter(b => b.status === "cancelled").length,
-      totalGuests: bookings.reduce((sum, b) => { 
-        const roomGuests = b.rooms.reduce( (roomSum, r) => 
-          roomSum + (r.adults || 0) + (r.children || 0)
-        , 0 ); 
-        return sum + roomGuests; 
+      totalBookings: summaryBookings.length,
+      checkedIn: summaryBookings.filter(b => b.status === "checked_in").length,
+      checkedOut: summaryBookings.filter(b => b.status === "checked_out").length,
+      confirmed: summaryBookings.filter(b => b.status === "confirmed").length, 
+      pending: summaryBookings.filter(b => b.status === "pending").length, 
+      cancelled: summaryBookings.filter(b => b.status === "cancelled").length,
+      totalGuests: summaryBookings.reduce((sum, b) => {
+        const roomGuests = b.rooms.reduce(
+          (roomSum, r) => roomSum + (r.adults || 0) + (r.children || 0),
+          0
+        );
+        return sum + roomGuests;
       }, 0),
-      revenue: bookings
-        .filter(b => b.status === "checked_out" || b.status === "confirmed")
-        .reduce((sum, b) => sum + b.totalPrice, 0),
-      revenueUSD: bookings
-        .filter(b => b.status === "checked_out" || b.status === "confirmed")
-        .reduce((sum, b) => sum + b.totalPriceUSD, 0),
+      revenue: summaryBookings.reduce((sum, b) => {
+        // ✅ prefer totalPrice if set, otherwise calculate from rooms
+        if (b.totalPrice) return sum + b.totalPrice;
+        const roomRevenue = b.rooms.reduce(
+          (roomSum, r) =>
+            roomSum + (r.price || r.basePrice || (r.roomId?.price || 0)),
+          0
+        );
+        return sum + roomRevenue;
+      }, 0),
+      revenueUSD: summaryBookings.reduce((sum, b) => {
+        if (b.totalPriceUSD) return sum + b.totalPriceUSD;
+        const roomRevenueUSD = b.rooms.reduce(
+          (roomSum, r) =>
+            roomSum + (r.converted?.USD || r.basePriceUSD || 0),
+          0
+        );
+        return sum + roomRevenueUSD;
+      }, 0),
     };
 
     res.json({ summary, bookings });
   } catch (error) {
+    console.error("Error generating report:", error);
     res.status(500).json({ message: error.message });
   }
 };
+
 
 exports.getAvailableRoomNumbers = async (req, res) => {
   try {
@@ -1025,7 +1068,6 @@ exports.createDirectCheckIn = async (req, res) => {
   try {
     const { 
       customerType,
-      userId,
       guestFirstName,
       guestLastName,
       guestEmail,
@@ -1035,7 +1077,7 @@ exports.createDirectCheckIn = async (req, res) => {
       guestZipCode,
       guestCountry,
       rooms,        // Each room: { roomId, adults, children, roomNumber }
-      checkIn,
+      // checkIn,
       checkOut,
       bookingSource
     } = req.body;
@@ -1075,7 +1117,7 @@ exports.createDirectCheckIn = async (req, res) => {
 
     if (!rooms || rooms.length === 0) return res.status(400).json({ message: "At least one room must be selected" });
 
-    const checkInDate = buildDateTime(checkIn, hotel.arrivalTime);
+    const checkInDate = buildDateTime(new Date(), hotel.arrivalTime);
     const checkOutDate = buildDateTime(checkOut, hotel.departureTime);
 
     if (checkOutDate <= checkInDate) return res.status(400).json({ message: "Check-out must be after check-in" });
@@ -1123,9 +1165,13 @@ exports.createDirectCheckIn = async (req, res) => {
 
       bookingRooms.push({
         roomId: r.roomId,
+        roomType: roomDoc.type,
         roomNumber,
         adults,
         children,
+        nights,
+        basePrice: pricingEntry.price,
+        basePriceUSD: pricingEntry.converted?.USD,
         price: pricingEntry.price * nights, 
         converted: { USD: pricingEntry.converted?.USD * nights }
       });
@@ -1158,6 +1204,11 @@ exports.createDirectCheckIn = async (req, res) => {
 
     const booking = await Booking.create(bookingPayload);
 
+    let invoice = null;
+    if (booking.status === "checked_in") { 
+      invoice = await createInvoiceOnCheckIn(booking); 
+    }
+
     res.status(201).json({ message: "Direct check-in created", booking });
 
   } catch (error) {
@@ -1177,6 +1228,11 @@ exports.updateBookingStatus = async (req, res) => {
     await booking.save(); // Apply room status transitions 
     
    if (newStatus === "checked_in") {
+      let invoice = null;
+      if (booking.status === "checked_in") { 
+        invoice = await createInvoiceOnCheckIn(booking); 
+      }
+
       await Room.updateMany(
         { "rooms.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } },
         { $set: { "rooms.$[elem].status": "not_available" } },
@@ -1190,6 +1246,8 @@ exports.updateBookingStatus = async (req, res) => {
         { $set: { "rooms.$[elem].status": "dirty" } },
         { arrayFilters: [{ "elem.roomNumber": { $in: booking.rooms.map(r => r.roomNumber) } }] }
       );
+
+      await finalizeInvoiceOnCheckout(booking._id);
     }
 
     if (newStatus === "no_show" || newStatus === "cancelled") {

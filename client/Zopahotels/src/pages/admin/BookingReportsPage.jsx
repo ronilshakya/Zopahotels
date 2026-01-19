@@ -5,7 +5,7 @@ import Swal from "sweetalert2";
 import { useHotel } from "../../context/HotelContext";
 import dayjs from 'dayjs'
 
-const ReportsPage = () => {
+const BookingReportsPage = () => {
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [bookings, setBookings] = useState([]);
@@ -40,7 +40,7 @@ const ReportsPage = () => {
   };
 
   const handlePrint = () => {
-    const printContents = tableRef.current.innerHTML;
+    const printContents = tableRef?.current?.innerHTML;
     const newWindow = window.open("", "", "width=800,height=600");
     newWindow.document.write(`
       <html>
@@ -181,7 +181,7 @@ const ReportsPage = () => {
                           hotel.currency === "NPR" ? (
                             "Rs. " + b.totalPrice
                           ):(
-                            "$" + b.totalPriceUSD.toFixed(2)
+                            "$" + b?.totalPriceUSD?.toFixed(2)
                           )                  
                         }
                       </td>
@@ -203,4 +203,4 @@ const ReportsPage = () => {
   );
 };
 
-export default ReportsPage;
+export default BookingReportsPage;

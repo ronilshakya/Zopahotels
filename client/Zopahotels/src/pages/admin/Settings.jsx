@@ -22,23 +22,25 @@ const Settings = () => {
 
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-    <div className="p-6 max-w-3xl mx-auto">
+    <>
+      <div className="min-h-screen bg-gray-100 ">
+      <div className="">
 
-      {!hotel ? (
-        <>
-          <h1 className="text-2xl font-semibold mb-6">Hotel Settings</h1>
-        <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8">
-          <p className="text-gray-600 mb-4">No hotel details available.</p>
-          <Button onClick={() => navigate('/admin/hotel-form/add')}>Add Hotel</Button>
-        </div>
-        </>
-      ) : (
-        <HotelForm mode="edit" />
-      )}
-    </div>
-    <Outlet />
-    </div>
+        {!hotel ? (
+          <>
+            <h1 className="text-2xl font-semibold mb-6">Hotel Settings</h1>
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-xl p-8">
+            <p className="text-gray-600 mb-4">No hotel details available.</p>
+            <Button onClick={() => navigate('/admin/hotel-form/add')}>Add Hotel</Button>
+          </div>
+          </>
+        ) : (
+          <HotelForm mode="edit" />
+        )}
+      </div>
+      <Outlet />
+      </div>
+    </>
   )
 }
 

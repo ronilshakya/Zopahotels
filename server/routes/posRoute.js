@@ -18,7 +18,10 @@ const {
     createPOSBooking,
     searchItems,
     createPOSWalkIn,
-    getPOSWalkInOrders
+    getPOSOrders,
+    getPOSOrderById,
+    createPOSMember,
+    getPOSOrderByUserId
 } = require('../controllers/posController');
 
 const storage = multer.diskStorage({ 
@@ -51,13 +54,16 @@ router.post('/create-sub-category',auth, isAdmin, createSubCategory);
 router.post('/create-item', auth, isAdmin, upload.single("image"), createItem);
 router.post('/create-pos',auth, isAdmin, createPOSBooking);
 router.post('/create-pos-walkin',auth, isAdmin, createPOSWalkIn);
+router.post('/create-pos-member',auth, isAdmin, createPOSMember);
 
 router.get('/search-items',auth, isAdmin, searchItems);
 
-router.get('/get-pos-walkin',auth, isAdmin, getPOSWalkInOrders);
+router.get('/get-pos-walkin',auth, isAdmin, getPOSOrders);
 router.get('/get-categories',auth, isAdmin, getCategories);
 router.get('/get-sub-categories/:categoryId',auth, isAdmin, getSubCategories);
 router.get('/get-items/:subcategoryId',auth, isAdmin, getItems);
+router.get('/get-pos-order/:orderId',auth, isAdmin, getPOSOrderById);
+router.get('/get-pos-order-by-user/:userId',auth, isAdmin, getPOSOrderByUserId);
 
 router.put('/update-category/:id',auth, isAdmin, updateCategory);
 router.put('/update-sub-category/:id',auth, isAdmin, updateSubCategory);

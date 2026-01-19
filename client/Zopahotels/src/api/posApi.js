@@ -249,8 +249,45 @@ export const createPOSWalkIn = async (token, items) =>{
          return res.data;
 }
 
-export const getPOSWalkInOrders = async (token) =>{
-    const res = await axios.get(`${API_URL_EXTENDED}/get-pos-walkin`,
+export const createPOSMember = async (token,userId, items) =>{
+    const res = await axios.post(`${API_URL_EXTENDED}/create-pos-member`,
+       { userId, items },
+         {
+              headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+         return res.data;
+}
+
+export const getPOSOrders = async (
+    token,
+  type = "all",
+  search = "",
+  page = 1,
+  limit = 10
+) =>{
+    const res = await axios.get(`${API_URL_EXTENDED}/get-pos-walkin?type=${type}&search=${search}&page=${page}&limit=${limit}`,
+         {
+              headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+         return res.data;
+}
+
+export const getPOSOrderById = async (token, orderId) => {
+    const res = await axios.get(`${API_URL_EXTENDED}/get-pos-order/${orderId}`,
+         {
+              headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+         return res.data;
+}
+
+export const getPOSOrderByUserId = async (token, userId) => {
+    const res = await axios.get(`${API_URL_EXTENDED}/get-pos-order-by-user/${userId}`,
          {
               headers: {
                     Authorization: `Bearer ${token}`,

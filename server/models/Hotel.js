@@ -40,6 +40,10 @@ const hotelSchema = new mongoose.Schema({
         type: String,
         default: "12:00" 
     },
+    enableVat: { 
+        type: Boolean,
+        default: false
+    },
     bookingSource: [String],
 },{timestamps:true});
 
