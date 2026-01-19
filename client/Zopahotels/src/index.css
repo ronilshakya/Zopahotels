@@ -30,4 +30,15 @@
     page-break-after: avoid;
     page-break-before: avoid;
   }
+   .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
 }

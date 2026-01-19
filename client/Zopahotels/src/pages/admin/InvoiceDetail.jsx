@@ -11,6 +11,7 @@ const InvoiceDetail = () => {
     const {hotel} = useHotel();
     const [invoice, setInvoice] = useState([]);
     const navigate = useNavigate();
+    const printRef = useRef();
     useEffect(() => {
         const fetchInvoice = async () => {
             try {
@@ -24,7 +25,6 @@ const InvoiceDetail = () => {
         fetchInvoice();
     }, [id]);
 
-    console.log(invoice)
 
   return (
     <>
@@ -33,22 +33,31 @@ const InvoiceDetail = () => {
           <h1 className='px-2 py-1 text-2xl font-bold'>Invoice Details</h1>
           <p className='px-2 py-1 text-sm text-gray-500'>Manage and view invoice</p>
         </div>
-        <button
-          type="submit"
-          className="p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 cursor-pointer"
-          onClick={() => {
-            invoice.booking ?
-            navigate(`/admin/check-out-page/${invoice.booking._id}`)
-            : 
-            navigate(`/admin/checkout-pos/${invoice._id}`)
-          }}
-        >
-          Edit
-        </button>
+        <div>
+          <button
+            type="submit"
+            className="p-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition duration-200 cursor-pointer"
+            onClick={() => {
+              invoice.booking ?
+              navigate(`/admin/check-out-page/${invoice.booking._id}`)
+              : 
+              navigate(`/admin/checkout-pos/${invoice._id}`)
+            }}
+          >
+            Edit
+          </button>
+          <button
+            type="submit"
+            className="p-2 bg-green-600 ms-2 text-white font-semibold rounded-lg hover:bg-green-700 transition duration-200 cursor-pointer"
+            onClick={() => window.print()}
+          >
+            Print
+          </button>
+        </div>
       </div>
 
       <div className="min-h-screen bg-gray-100 p-4">
-        <div className="mx-auto px-4 py-3 border border-gray-300 bg-white rounded-2xl shadow-lg">
+        <div ref={printRef} className="print-area mx-auto px-4 py-3 border border-gray-300 bg-white rounded-2xl shadow-lg">
           <div className='grid grid-cols-1 md:grid-cols-2 border-b border-gray-300'>
             <div className='p-5 '>
               <h1 className='text-3xl text-blue-600 font-semibold mb-2'>{hotel?.name}</h1>
